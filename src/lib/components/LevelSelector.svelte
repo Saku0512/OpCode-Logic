@@ -14,6 +14,7 @@
     // Level[i] is unlocked if Level[i-1] is in completedLevels.
     function isUnlocked(index: number) {
         if (index === 0) return true;
+        if (levels.length === 0) return false;
         const prevLevel = levels[index - 1];
         return completedLevels.has(prevLevel.id);
     }
@@ -50,18 +51,26 @@
     {:else}
         <div class="list">
             {#each levels as level, i}
+                {@const unlocked = isUnlocked(i)}
+                {@const isCompleted = completedLevels.has(level.id)}
                 <button
                     class="level-btn"
                     class:active={selectedLevelId === level.id}
-                    class:completed={completedLevels.has(level.id)}
-                    class:locked={!isUnlocked(i)}
-                    disabled={!isUnlocked(i)}
-                    on:click={() => selectLevel(level)}
+                    class:completed={isCompleted}
+                    class:locked={!unlocked}
+                    disabled={!unlocked}
+                    on:click={() => {
+                        if (unlocked) {
+                            selectLevel(level);
+                        } else {
+                            console.log(`Level ${level.id} is locked. Previous level must be completed first.`);
+                        }
+                    }}
                 >
                     <span class="status-marker">
-                        {#if completedLevels.has(level.id)}
+                        {#if isCompleted}
                             <span class="check">✓</span>
-                        {:else if !isUnlocked(i)}
+                        {:else if !unlocked}
                             <span class="lock">🔒</span>
                         {:else}
                             <span class="dot">•</span>

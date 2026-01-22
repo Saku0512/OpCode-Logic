@@ -36,11 +36,13 @@
   function markLevelComplete(id: string) {
     if (!completedLevels.has(id)) {
       completedLevels.add(id);
+      // Svelte のリアクティビティを確実に動作させるため、新しい Set を作成
       completedLevels = new Set(completedLevels);
       localStorage.setItem(
         "opcode_completed_levels",
         JSON.stringify(Array.from(completedLevels)),
       );
+      console.log("Level completed:", id, "Completed levels:", Array.from(completedLevels));
     }
   }
 
