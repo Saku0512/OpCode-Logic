@@ -1,9 +1,0 @@
-グランドステージ: 1.The Accumulator
-
-フェーズ: Phase 2 - Flags & Jumps
-
-ステージ名: Unconditional
-
-ステージ内容: 入力Aを読み、1 を出力する処理を無限に繰り返せ。
-
-学習ポイント: jmp (無条件分岐), ラベルの概念

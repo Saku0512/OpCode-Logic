@@ -1,9 +1,0 @@
-グランドステージ: 1.The Accumulator
-
-フェーズ: Phase 1 - Registers & ALU
-
-ステージ名: Inc & Dec
-
-ステージ内容: 入力Aを読み、A + 1 と A - 1 を順に出力せよ。
-
-学習ポイント: inc, dec (1バイト命令の効率性)

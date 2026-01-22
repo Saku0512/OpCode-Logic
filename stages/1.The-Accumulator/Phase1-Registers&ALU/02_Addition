@@ -1,9 +1,0 @@
-グランドステージ: 1.The Accumulator
-
-フェーズ: Phase 1 - Registers & ALU
-
-ステージ名: Addition
-
-ステージ内容: 入力を2回読み(A, B)、A + B を出力せよ。
-
-学習ポイント: ADD

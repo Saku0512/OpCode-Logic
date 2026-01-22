@@ -1,9 +1,0 @@
-グランドステージ: 1.The Accumulator
-
-フェーズ: Phase 3 - Loop Structures
-
-ステージ名: Countdown
-
-ステージ内容: 入力N (N>0) を読み、N, N-1, ... 1 まで順に出力せよ。
-
-学習ポイント: dec と jnz を組み合わせた基本ループ

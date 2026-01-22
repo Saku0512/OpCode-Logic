@@ -1,9 +1,0 @@
-グランドステージ: 1.The Accumulator
-
-フェーズ: Phase 3 - Loop Structures
-
-ステージ名: Accumulate 3
-
-ステージ内容: 入力を3回読み、その合計を出力せよ。
-
-学習ポイント: レジスタの退避 (push/pop または 別レジスタ rbx等の利用)
