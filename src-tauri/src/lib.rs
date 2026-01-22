@@ -21,20 +21,20 @@ fn get_levels() -> Vec<levels::Level> {
 #[tauri::command]
 fn get_level_explanation(level_id: String) -> Result<String, String> {
     // レベルIDからファイルパスを生成
-    // 例: "01_Mov&Call" -> "stages/1.The-Accumulator/Phase1-Registers&ALU/01_Mov&Call.md"
+    // 例: "01_Mov&Call" -> "commnet/1.The-Accumulator/Phase1-Registers&ALU/01_Mov&Call.md"
     let file_path = match level_id.as_str() {
-        "01_Mov&Call" => "stages/1.The-Accumulator/Phase1-Registers&ALU/01_Mov&Call.md",
-        "02_Addition" => "stages/1.The-Accumulator/Phase1-Registers&ALU/02_Addition.md",
-        "03_Subtraction" => "stages/1.The-Accumulator/Phase1-Registers&ALU/03_Subtraction.md",
-        "04_TheXORTrick" => "stages/1.The-Accumulator/Phase1-Registers&ALU/04_TheXORTrick.md",
-        "05_Inc&Dec" => "stages/1.The-Accumulator/Phase1-Registers&ALU/05_Inc&Dec.md",
-        "06_Unconditional" => "stages/1.The-Accumulator/Phase2-Flags&Jumps/06_Unconditional.md",
-        "07_ZeroFlag" => "stages/1.The-Accumulator/Phase2-Flags&Jumps/07_ZeroFlag.md",
-        "08_SignFlag" => "stages/1.The-Accumulator/Phase2-Flags&Jumps/08_SignFlag.md",
-        "09_Comparison" => "stages/1.The-Accumulator/Phase2-Flags&Jumps/09_Conmparison.md",
-        "10_Countdown" => "stages/1.The-Accumulator/Phase3-LoopStructures/10_Countdown.md",
-        "11_Accumulate3" => "stages/1.The-Accumulator/Phase3-LoopStructures/11_Accumulate3.md",
-        "12_TheAccumulator" => "stages/1.The-Accumulator/BOSS/TheAccumulator.md",
+        "01_Mov&Call" => "commnet/1.The-Accumulator/Phase1-Registers&ALU/01_Mov&Call.md",
+        "02_Addition" => "commnet/1.The-Accumulator/Phase1-Registers&ALU/02_Addition.md",
+        "03_Subtraction" => "commnet/1.The-Accumulator/Phase1-Registers&ALU/03_Subtraction.md",
+        "04_TheXORTrick" => "commnet/1.The-Accumulator/Phase1-Registers&ALU/04_TheXORTrick.md",
+        "05_Inc&Dec" => "commnet/1.The-Accumulator/Phase1-Registers&ALU/05_Inc&Dec.md",
+        "06_Unconditional" => "commnet/1.The-Accumulator/Phase2-Flags&Jumps/06_Unconditional.md",
+        "07_ZeroFlag" => "commnet/1.The-Accumulator/Phase2-Flags&Jumps/07_ZeroFlag.md",
+        "08_SignFlag" => "commnet/1.The-Accumulator/Phase2-Flags&Jumps/08_SignFlag.md",
+        "09_Comparison" => "commnet/1.The-Accumulator/Phase2-Flags&Jumps/09_Conmparison.md",
+        "10_Countdown" => "commnet/1.The-Accumulator/Phase3-LoopStructures/10_Countdown.md",
+        "11_Accumulate3" => "commnet/1.The-Accumulator/Phase3-LoopStructures/11_Accumulate3.md",
+        "12_TheAccumulator" => "commnet/1.The-Accumulator/BOSS/TheAccumulator.md",
         _ => return Err(format!("Explanation not found for level: {}", level_id)),
     };
 
@@ -44,7 +44,7 @@ fn get_level_explanation(level_id: String) -> Result<String, String> {
     path.push(file_path);
 
     fs::read_to_string(&path)
-        .map_err(|e| format!("Failed to read explanation file: {}", e))
+        .map_err(|e| format!("Failed to read explanation file: {} (path: {:?})", e, path))
 }
 
 #[tauri::command]
