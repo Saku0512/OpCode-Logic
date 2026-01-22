@@ -72,6 +72,7 @@ pub struct VM {
     output_queue: Vec<i64>,
     error: Option<String>,
     finished: bool,
+    execution_log: Vec<String>, // 実行ログを保存
 }
 
 const MEMORY_SIZE: usize = 65536; // 64KB
@@ -102,6 +103,7 @@ impl VM {
             output_queue: Vec::new(),
             error: None,
             finished: false,
+            execution_log: Vec::new(),
         }
     }
 
@@ -126,6 +128,68 @@ impl VM {
             finished: self.finished || self.pc >= self.program.len() || self.error.is_some(),
             error: self.error.clone(),
         }
+    }
+
+    pub fn get_execution_log(&self) -> Vec<String> {
+        self.execution_log.clone()
+    }
+
+    fn log(&mut self, message: String) {
+        // コンソールにも出力（デバッグ用）
+        println!("{}", message);
+        self.execution_log.push(message);
+    }
+
+    fn format_operand(&self, op: &Operand) -> String {
+        match op {
+            Operand::Reg(r) => format!("{:?}", r),
+            Operand::Imm(val) => format!("{}", val),
+            Operand::Label(l) => l.clone(),
+            Operand::MemReg(r) => format!("[{:?}]", r),
+            Operand::MemLabel(l) => format!("[{}]", l),
+        }
+    }
+
+    fn format_instruction(&self, inst: &Instruction) -> String {
+        match inst {
+            Instruction::MOV(dest, src) => format!("MOV {}, {}", self.format_operand(dest), self.format_operand(src)),
+            Instruction::ADD(dest, src) => format!("ADD {}, {}", self.format_operand(dest), self.format_operand(src)),
+            Instruction::SUB(dest, src) => format!("SUB {}, {}", self.format_operand(dest), self.format_operand(src)),
+            Instruction::INC(op) => format!("INC {}", self.format_operand(op)),
+            Instruction::DEC(op) => format!("DEC {}", self.format_operand(op)),
+            Instruction::XOR(dest, src) => format!("XOR {}, {}", self.format_operand(dest), self.format_operand(src)),
+            Instruction::CMP(op1, op2) => format!("CMP {}, {}", self.format_operand(op1), self.format_operand(op2)),
+            Instruction::TEST(op1, op2) => format!("TEST {}, {}", self.format_operand(op1), self.format_operand(op2)),
+            Instruction::JMP(label) => format!("JMP {}", label),
+            Instruction::JZ(label) => format!("JZ {}", label),
+            Instruction::JNZ(label) => format!("JNZ {}", label),
+            Instruction::JS(label) => format!("JS {}", label),
+            Instruction::PUSH(op) => format!("PUSH {}", self.format_operand(op)),
+            Instruction::POP(op) => format!("POP {}", self.format_operand(op)),
+            Instruction::IN(op) => format!("IN {}", self.format_operand(op)),
+            Instruction::OUT(op) => format!("OUT {}", self.format_operand(op)),
+            Instruction::SYSCALL => "SYSCALL".to_string(),
+            Instruction::RET => "RET".to_string(),
+        }
+    }
+
+    fn log_registers(&self) -> String {
+        let regs = vec![
+            ("RAX", Register::RAX),
+            ("RBX", Register::RBX),
+            ("RCX", Register::RCX),
+            ("RDX", Register::RDX),
+            ("RSI", Register::RSI),
+            ("RDI", Register::RDI),
+        ];
+        let mut result = String::new();
+        for (name, reg) in regs {
+            let val = self.get_register(reg);
+            if val != 0 || name == "RDI" || name == "RSI" || name == "RDX" {
+                result.push_str(&format!("{}={} ", name, val));
+            }
+        }
+        result.trim().to_string()
     }
 
     fn get_value(&self, op: &Operand) -> Result<i64, String> {
@@ -219,16 +283,29 @@ impl VM {
 
         let inst = self.program[self.pc].clone();
         let mut next_pc = self.pc + 1;
+        
+        // 実行前の状態をログ
+        let inst_str = self.format_instruction(&inst);
+        let regs_before = self.log_registers();
+        self.log(format!("[Step {}] PC={} | {} | Before: {} | ZF={} SF={}", 
+            self.execution_log.len() + 1, self.pc, inst_str, regs_before, self.zf, self.sf));
 
         match inst {
             Instruction::MOV(dest, src) => {
                 match self.get_value(&src) {
                     Ok(val) => {
                         if let Err(e) = self.set_value(&dest, val) {
-                            self.error = Some(e);
+                            self.error = Some(e.clone());
+                            self.log(format!("  ERROR: {}", e));
+                        } else {
+                            let dest_str = self.format_operand(&dest);
+                            self.log(format!("  -> {} = {}", dest_str, val));
                         }
                     },
-                    Err(e) => { self.error = Some(e); }
+                    Err(e) => { 
+                        self.error = Some(e.clone());
+                        self.log(format!("  ERROR: {}", e));
+                    }
                 }
             },
             Instruction::ADD(dest, src) => {
@@ -236,14 +313,24 @@ impl VM {
                     let res = v1.wrapping_add(v2);
                     let _ = self.set_value(&dest, res);
                     self.update_flags(res);
-                } else { self.error = Some("Invalid operands for ADD".to_string()); }
+                    let dest_str = self.format_operand(&dest);
+                    self.log(format!("  -> {} = {} + {} = {}", dest_str, v1, v2, res));
+                } else { 
+                    self.error = Some("Invalid operands for ADD".to_string());
+                    self.log("  ERROR: Invalid operands for ADD".to_string());
+                }
             },
             Instruction::SUB(dest, src) => {
                 if let (Ok(v1), Ok(v2)) = (self.get_value(&dest), self.get_value(&src)) {
                     let res = v1.wrapping_sub(v2);
                     let _ = self.set_value(&dest, res);
                     self.update_flags(res);
-                } else { self.error = Some("Invalid operands for SUB".to_string()); }
+                    let dest_str = self.format_operand(&dest);
+                    self.log(format!("  -> {} = {} - {} = {}", dest_str, v1, v2, res));
+                } else { 
+                    self.error = Some("Invalid operands for SUB".to_string());
+                    self.log("  ERROR: Invalid operands for SUB".to_string());
+                }
             },
             Instruction::INC(op) => {
                 if let Ok(val) = self.get_value(&op) {
@@ -293,14 +380,25 @@ impl VM {
             Instruction::IN(op) => {
                 if let Some(val) = self.input_queue.pop_front() {
                     if let Err(e) = self.set_value(&op, val) {
-                        self.error = Some(e);
+                        self.error = Some(e.clone());
+                        self.log(format!("  ERROR: {}", e));
+                    } else {
+                        let op_str = self.format_operand(&op);
+                        self.log(format!("  -> {} = INPUT: {} (remaining: {})", op_str, val, self.input_queue.len()));
                     }
-                } else { self.error = Some("Input buffer empty".to_string()); }
+                } else { 
+                    self.error = Some("Input buffer empty".to_string());
+                    self.log("  ERROR: Input buffer empty".to_string());
+                }
             },
             Instruction::OUT(op) => {
                 if let Ok(val) = self.get_value(&op) {
                     self.output_queue.push(val);
-                } else { self.error = Some("Invalid source for OUT".to_string()); }
+                    self.log(format!("  -> OUTPUT: {} (total outputs: {})", val, self.output_queue.len()));
+                } else { 
+                    self.error = Some("Invalid source for OUT".to_string());
+                    self.log("  ERROR: Invalid source for OUT".to_string());
+                }
             },
             Instruction::SYSCALL => {
                 let rax = self.get_register(Register::RAX);
@@ -309,28 +407,45 @@ impl VM {
                         let count = self.get_register(Register::RDX) as usize;
                         let addr = self.get_register(Register::RSI) as usize;
                         let mut read_bytes = 0;
+                        self.log(format!("  -> SYSCALL READ: count={}, addr=0x{:x}", count, addr));
                         for i in 0..count {
                             if let Some(val) = self.input_queue.pop_front() {
                                 if addr + i < self.memory.len() {
-                                    self.memory[addr + i] = (val & 0xFF) as u8;
+                                    let byte_val = (val & 0xFF) as u8;
+                                    self.memory[addr + i] = byte_val;
+                                    self.log(format!("    Read byte[{}]: input={} -> memory[0x{:x}]={} (0x{:02x})", 
+                                        i, val, addr + i, byte_val as i8 as i64, byte_val));
                                     read_bytes += 1;
                                 }
                             } else { break; }
                         }
                         self.registers.insert(Register::RAX, read_bytes as i64);
+                        self.log(format!("  -> READ complete: {} bytes read", read_bytes));
                     },
                     1 => { // sys_write
                         let count = self.get_register(Register::RDX) as usize;
                         let addr = self.get_register(Register::RSI) as usize;
                         let mut written_bytes = 0;
+                        self.log(format!("  -> SYSCALL WRITE: count={}, addr=0x{:x}", count, addr));
                         for i in 0..count {
                             if addr + i < self.memory.len() {
-                                let val = self.memory[addr + i] as i64;
+                                // 符号拡張: u8 を i64 に変換する際、最上位ビットが1なら符号拡張
+                                let byte_val = self.memory[addr + i];
+                                let val = if byte_val & 0x80 != 0 {
+                                    // 符号拡張: 負の値として扱う
+                                    (byte_val as i8) as i64
+                                } else {
+                                    byte_val as i64
+                                };
+                                self.log(format!("    Write byte[{}]: memory[0x{:x}]=0x{:02x} -> output={}", 
+                                    i, addr + i, byte_val, val));
                                 self.output_queue.push(val);
                                 written_bytes += 1;
                             } else { break; }
                         }
                         self.registers.insert(Register::RAX, written_bytes as i64);
+                        self.log(format!("  -> WRITE complete: {} bytes written, output queue: {:?}", 
+                            written_bytes, self.output_queue));
                     },
                     60 => { // sys_exit
                         self.finished = true;
@@ -339,25 +454,55 @@ impl VM {
                 }
             },
             Instruction::JMP(label) => {
-                if let Some(&addr) = self.labels.get(&label) { next_pc = addr; }
-                else { self.error = Some(format!("Label not found: {}", label)); }
+                if let Some(&addr) = self.labels.get(&label) { 
+                    next_pc = addr;
+                    self.log(format!("  -> JUMP to {} (PC: {} -> {})", label, self.pc, addr));
+                }
+                else { 
+                    self.error = Some(format!("Label not found: {}", label));
+                    self.log(format!("  ERROR: Label not found: {}", label));
+                }
             },
             Instruction::JZ(label) => {
                 if self.zf {
-                    if let Some(&addr) = self.labels.get(&label) { next_pc = addr; }
-                    else { self.error = Some(format!("Label not found: {}", label)); }
+                    if let Some(&addr) = self.labels.get(&label) { 
+                        next_pc = addr;
+                        self.log(format!("  -> JZ taken: jump to {} (PC: {} -> {})", label, self.pc, addr));
+                    }
+                    else { 
+                        self.error = Some(format!("Label not found: {}", label));
+                        self.log(format!("  ERROR: Label not found: {}", label));
+                    }
+                } else {
+                    self.log(format!("  -> JZ not taken (ZF={})", self.zf));
                 }
             },
             Instruction::JNZ(label) => {
                 if !self.zf {
-                    if let Some(&addr) = self.labels.get(&label) { next_pc = addr; }
-                    else { self.error = Some(format!("Label not found: {}", label)); }
+                    if let Some(&addr) = self.labels.get(&label) { 
+                        next_pc = addr;
+                        self.log(format!("  -> JNZ taken: jump to {} (PC: {} -> {})", label, self.pc, addr));
+                    }
+                    else { 
+                        self.error = Some(format!("Label not found: {}", label));
+                        self.log(format!("  ERROR: Label not found: {}", label));
+                    }
+                } else {
+                    self.log(format!("  -> JNZ not taken (ZF={})", self.zf));
                 }
             },
             Instruction::JS(label) => {
                 if self.sf {
-                    if let Some(&addr) = self.labels.get(&label) { next_pc = addr; }
-                    else { self.error = Some(format!("Label not found: {}", label)); }
+                    if let Some(&addr) = self.labels.get(&label) { 
+                        next_pc = addr;
+                        self.log(format!("  -> JS taken: jump to {} (PC: {} -> {})", label, self.pc, addr));
+                    }
+                    else { 
+                        self.error = Some(format!("Label not found: {}", label));
+                        self.log(format!("  ERROR: Label not found: {}", label));
+                    }
+                } else {
+                    self.log(format!("  -> JS not taken (SF={})", self.sf));
                 }
             },
             Instruction::RET => { self.finished = true; }
@@ -365,6 +510,11 @@ impl VM {
 
         if self.error.is_none() {
             self.pc = next_pc;
+            let regs_after = self.log_registers();
+            self.log(format!("  After: {} | ZF={} SF={} | Output: {:?}", 
+                regs_after, self.zf, self.sf, self.output_queue));
+        } else {
+            self.log(format!("  EXECUTION STOPPED due to error"));
         }
 
         true
