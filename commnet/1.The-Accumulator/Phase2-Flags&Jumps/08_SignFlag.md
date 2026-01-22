@@ -19,24 +19,48 @@
 ## 正解コード
 
 ```asm
+section .bss
+    buf resb 16
+
 section .text
     global _start
 
 _start:
-    ; RDI と 0 を比較（SFを設定）
-    cmp rdi, 0
-    
-    ; SFがセットされていれば（RDI < 0）negative_labelにジャンプ
-    js negative_label
-    
-    ; RDI >= 0 の場合
-    mov rax, 0          ; 0を返す
-    ret
+    ; MISSION: Sign Flag
+    ; read from stdin, check if first byte is negative, write result
 
-negative_label:
-    ; RDI < 0 の場合
-    mov rax, 1          ; 1を返す
-    ret
+    ; read(0, buf, 16)
+    mov rax, 0          ; syscall: read
+    mov rdi, 0          ; stdin
+    mov rsi, buf        ; buffer
+    mov rdx, 16         ; size
+    syscall
+
+    ; check if first byte is negative
+    mov al, byte [buf]
+    test al, al         ; sets SF based on MSB
+    js .is_negative
+    
+    ; positive
+    mov byte [buf], '+'
+    mov rdx, 1
+    jmp .write_result
+
+.is_negative:
+    mov byte [buf], '-'
+    mov rdx, 1
+
+.write_result:
+    ; write(1, buf, rdx)
+    mov rax, 1          ; syscall: write
+    mov rdi, 1          ; stdout
+    mov rsi, buf
+    syscall
+    
+    ; exit(0)
+    mov rax, 60
+    xor rdi, rdi
+    syscall
 ```
 
 ## コード解説

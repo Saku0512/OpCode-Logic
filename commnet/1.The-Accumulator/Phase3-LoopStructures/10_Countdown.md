@@ -19,27 +19,52 @@
 ## 正解コード
 
 ```asm
+section .bss
+    buf resb 16
+
 section .text
     global _start
 
 _start:
-    ; RCX に RDI の値をコピー（カウンタ）
-    mov rcx, rdi
+    ; MISSION: Countdown
+    ; read a digit, count down from it to 0
 
-loop_start:
-    ; 現在の値を出力
-    mov rax, rcx
-    out rax
+    ; read(0, buf, 16)
+    mov rax, 0          ; syscall: read
+    mov rdi, 0          ; stdin
+    mov rsi, buf        ; buffer
+    mov rdx, 16         ; size
+    syscall
+
+    ; get the digit and convert to number
+    mov al, byte [buf]
+    sub al, '0'         ; convert ASCII to number
     
-    ; カウンタを1減らす
-    dec rcx
+    ; setup for countdown
+    xor rcx, rcx
+    mov cl, al          ; rcx = number
+    xor rsi, rsi        ; buffer index = 0
+
+.loop:
+    ; write current number
+    mov al, cl
+    add al, '0'         ; convert back to ASCII
+    mov byte [buf + rsi], al
+    inc rsi
     
-    ; カウンタが0でなければループを継続
-    cmp rcx, 0
-    jnz loop_start
+    loop .loop
+
+    ; write(1, buf, rsi)
+    mov rdx, rsi        ; number of bytes
+    mov rax, 1          ; syscall: write
+    mov rdi, 1          ; stdout
+    mov rsi, buf
+    syscall
     
-    ; 終了
-    ret
+    ; exit(0)
+    mov rax, 60
+    xor rdi, rdi
+    syscall
 ```
 
 ## コード解説

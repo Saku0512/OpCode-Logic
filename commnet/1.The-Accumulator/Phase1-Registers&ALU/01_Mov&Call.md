@@ -20,15 +20,35 @@ MOV命令の基本的な構文は `mov 宛先, 元` です。
 ## 正解コード
 
 ```asm
+section .bss
+    buf resb 16
+
 section .text
     global _start
 
 _start:
-    ; RDI の値を RAX に移動
-    mov rax, rdi
+    ; MISSION: Mov & Call
+    ; read from stdin (syscall 0), write to stdout (syscall 1)
+
+    ; read(0, buf, 16)
+    mov rax, 0          ; syscall: read
+    mov rdi, 0          ; stdin
+    mov rsi, buf        ; buffer
+    mov rdx, 16         ; size
+    syscall
+
+    ; write(1, buf, rax)
+    mov rdx, rax        ; number of bytes read
+    mov rax, 1          ; syscall: write
+    mov rdi, 1          ; stdout
+    mov rsi, buf
+    syscall
     
-    ; 終了
-    ret
+    ; exit(0)
+    mov rax, 60
+    xor rdi, rdi
+    syscall
+
 ```
 
 ## コード解説

@@ -21,18 +21,47 @@ SUB命令の構文は `sub 宛先, 元` で、`宛先 = 宛先 - 元` を実行�
 ## 正解コード
 
 ```asm
+section .bss
+    buf resb 16
+
 section .text
     global _start
 
 _start:
-    ; RAX に RDI の値をコピー
-    mov rax, rdi
+    ; MISSION: Subtraction
+    ; read from stdin, subtract 1 from each byte, write to stdout
+
+    ; read(0, buf, 16)
+    mov rax, 0          ; syscall: read
+    mov rdi, 0          ; stdin
+    mov rsi, buf        ; buffer
+    mov rdx, 16         ; size
+    syscall
+
+    ; subtract 1 from each byte in the buffer
+    mov rcx, rax        ; number of bytes read
+    xor r8, r8          ; index = 0
+.loop:
+    cmp r8, rcx
+    jge .done_sub
+    mov al, byte [buf + r8]
+    sub al, 1
+    mov byte [buf + r8], al
+    inc r8
+    jmp .loop
+
+.done_sub:
+    ; write(1, buf, rax)
+    mov rdx, rcx        ; number of bytes to write
+    mov rax, 1          ; syscall: write
+    mov rdi, 1          ; stdout
+    mov rsi, buf
+    syscall
     
-    ; RAX から RSI の値を減算 (RAX = RAX - RSI)
-    sub rax, rsi
-    
-    ; 終了
-    ret
+    ; exit(0)
+    mov rax, 60
+    xor rdi, rdi
+    syscall
 ```
 
 ## コード解説

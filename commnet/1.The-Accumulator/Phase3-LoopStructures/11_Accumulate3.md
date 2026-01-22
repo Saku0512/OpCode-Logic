@@ -20,21 +20,55 @@
 ## 正解コード
 
 ```asm
+section .bss
+    buf resb 16
+    out resb 16
+
 section .text
     global _start
 
 _start:
-    ; RAX に RDI の値をコピー（合計の初期値）
-    mov rax, rdi
+    ; MISSION: Accumulate 3
+    ; read input, sum the first 3 bytes, write result
+
+    ; read(0, buf, 16)
+    mov rax, 0          ; syscall: read
+    mov rdi, 0          ; stdin
+    mov rsi, buf        ; buffer
+    mov rdx, 16         ; size
+    syscall
+
+    ; accumulate first 3 bytes
+    xor rax, rax        ; sum = 0
+    xor rcx, rcx        ; index = 0
     
-    ; RSI の値を加算
-    add rax, rsi
+.loop:
+    cmp rcx, 3
+    jge .done_accumulate
     
-    ; RDX の値を加算
-    add rax, rdx
+    mov bl, byte [buf + rcx]
+    movzx rbx, bl       ; zero-extend to 64-bit
+    add rax, rbx
+    inc rcx
+    jmp .loop
+
+.done_accumulate:
+    ; convert sum to decimal string
+    ; for simplicity, assume single digit result
+    add al, '0'
+    mov byte [out], al
+    mov rdx, 1
+
+    ; write(1, out, rdx)
+    mov rax, 1          ; syscall: write
+    mov rdi, 1          ; stdout
+    mov rsi, out
+    syscall
     
-    ; 終了（RAX = RDI + RSI + RDX）
-    ret
+    ; exit(0)
+    mov rax, 60
+    xor rdi, rdi
+    syscall
 ```
 
 ## コード解説

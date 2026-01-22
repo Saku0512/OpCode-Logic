@@ -21,18 +21,48 @@ ADD命令の構文は `add 宛先, 元` で、`宛先 = 宛先 + 元` を実行�
 ## 正解コード
 
 ```asm
+section .bss
+    buf resb 16
+
 section .text
     global _start
 
 _start:
-    ; RAX に RDI の値をコピー
-    mov rax, rdi
+    ; MISSION: Addition
+    ; read from stdin, add 1 to each byte, write to stdout
+
+    ; read(0, buf, 16)
+    mov rax, 0          ; syscall: read
+    mov rdi, 0          ; stdin
+    mov rsi, buf        ; buffer
+    mov rdx, 16         ; size
+    syscall
+
+    ; add 1 to each byte in the buffer
+    mov rcx, rax        ; number of bytes read
+    xor r8, r8          ; index = 0
+.loop:
+    cmp r8, rcx
+    jge .done_add
+    mov al, byte [buf + r8]
+    add al, 1
+    mov byte [buf + r8], al
+    inc r8
+    jmp .loop
+
+.done_add:
+    ; write(1, buf, rax)
+    mov rdx, rcx        ; number of bytes to write
+    mov rax, 1          ; syscall: write
+    mov rdi, 1          ; stdout
+    mov rsi, buf
+    syscall
     
-    ; RAX に RSI の値を加算 (RAX = RAX + RSI)
-    add rax, rsi
-    
-    ; 終了
-    ret
+    ; exit(0)
+    mov rax, 60
+    xor rdi, rdi
+    syscall
+
 ```
 
 ## コード解説
