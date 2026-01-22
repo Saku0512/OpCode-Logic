@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     tags:
-      - 'v*'  # v0.1.0, v1.0.0 などのタグでトリガー
+      - 'v*'
   workflow_dispatch:
     inputs:
       version:
@@ -12,11 +12,18 @@ on:
         type: string
 
 jobs:
-  get-version:
+  # 1. バージョン取得とリリースの作成を先に行う
+  create-release:
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.version }}
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+      release_id: ${{ steps.create_release.outputs.id }}
+    permissions:
+      contents: write
     steps:
+      - uses: actions/checkout@v4
+      
       - name: Get version
         id: version
         run: |
@@ -27,70 +34,48 @@ jobs:
             echo "version=$VERSION" >> $GITHUB_OUTPUT
           fi
 
-  build-windows:
-    needs: get-version
-    runs-on: windows-latest
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      # ここでReleaseの下書きを作成しておく
+      - name: Create Release
+        id: create_release
+        uses: softprops/action-gh-release@v2
         with:
-          node-version: '20'
-          cache: 'npm'
-      
-      - name: Install dependencies
-        run: npm ci
-      
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-      
-      - name: Build frontend
-        run: npm run build
-      
-      - name: Build Tauri app (Windows)
-        uses: tauri-apps/tauri-action@v0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          projectPath: .
-          tagName: v${{ needs.get-version.outputs.version }}
-          releaseName: 'OpCode Logic v${{ needs.get-version.outputs.version }}'
-          releaseBody: |
-            ## OpCode Logic v${{ needs.get-version.outputs.version }}
-            
-            ### ダウンロード
-            
-            #### Windows
-            - **Installer (NSIS)**: `opecode-logic_${{ needs.get-version.outputs.version }}_x64-setup.exe`
-            - **Installer (MSI)**: `opecode-logic_${{ needs.get-version.outputs.version }}_x64_en-US.msi`
-            
-            #### Linux
-            - **AppImage**: `opecode-logic_${{ needs.get-version.outputs.version }}_amd64.AppImage`
-            - **Debian Package**: `opecode-logic_${{ needs.get-version.outputs.version }}_amd64.deb`
-            
-            #### macOS
-            - **Intel (x64)**: `opecode-logic_${{ needs.get-version.outputs.version }}_x64.dmg`
-            - **Apple Silicon (ARM64)**: `opecode-logic_${{ needs.get-version.outputs.version }}_aarch64.dmg`
-            
-            ### インストール方法
-            
-            - **Windows**: `.exe`または`.msi`ファイルを実行
-            - **Linux**: 
-              - AppImage: `chmod +x *.AppImage && ./opecode-logic_*.AppImage`
-              - DEB: `sudo dpkg -i *.deb`
-            - **macOS**: `.dmg`ファイルを開き、アプリをApplicationsフォルダにドラッグ
-          releaseDraft: true
+          name: OpCode Logic v${{ steps.version.outputs.version }}
+          draft: true
           prerelease: false
-          args: --target x86_64-pc-windows-msvc
+          generate_release_notes: true
+          body: |
+            ## OpCode Logic v${{ steps.version.outputs.version }}
+            
+            インストール方法は各OSの手順に従ってください。
+            (ビルド完了後にアセットが追加されます)
 
-  build-linux:
-    needs: [get-version, build-windows]
-    runs-on: ubuntu-latest
+  # 2. 全プラットフォームで並列ビルド
+  build:
+    needs: create-release
     permissions:
       contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: 'windows-latest'
+            args: '--target x86_64-pc-windows-msvc'
+            target: 'x86_64-pc-windows-msvc'
+          
+          - platform: 'ubuntu-22.04' # 互換性のため22.04推奨
+            args: '--target x86_64-unknown-linux-gnu'
+            target: 'x86_64-unknown-linux-gnu'
+          
+          - platform: 'macos-13' # Intel Mac
+            args: '--target x86_64-apple-darwin'
+            target: 'x86_64-apple-darwin'
+          
+          - platform: 'macos-14' # Apple Silicon Mac (M1/M2)
+            args: '--target aarch64-apple-darwin'
+            target: 'aarch64-apple-darwin'
+
+    runs-on: ${{ matrix.platform }}
+    
     steps:
       - uses: actions/checkout@v4
       
@@ -103,104 +88,29 @@ jobs:
       - name: Install dependencies
         run: npm ci
       
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-      
-      - name: Install system dependencies
+      # Linux固有の依存関係
+      - name: Install system dependencies (Linux)
+        if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
-      
-      - name: Build frontend
-        run: npm run build
-      
-      - name: Build Tauri app (Linux)
-        uses: tauri-apps/tauri-action@v0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          projectPath: .
-          tagName: v${{ needs.get-version.outputs.version }}
-          releaseName: 'OpCode Logic v${{ needs.get-version.outputs.version }}'
-          releaseBody: 'See the changelog for details.'
-          releaseDraft: true
-          prerelease: false
-          args: --target x86_64-unknown-linux-gnu
-          updater: false
+          # Tauri v1の場合は libwebkit2gtk-4.0-dev に変更してください
 
-  build-macos-intel:
-    needs: [get-version, build-windows]
-    runs-on: macos-latest
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-      
-      - name: Install dependencies
-        run: npm ci
-      
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
-      
+        with:
+          targets: ${{ matrix.target }} # マトリックスで定義したターゲットを追加
+
       - name: Build frontend
         run: npm run build
       
-      - name: Build Tauri app (macOS Intel)
+      - name: Build and Upload Tauri app
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           projectPath: .
-          tagName: v${{ needs.get-version.outputs.version }}
-          releaseName: 'OpCode Logic v${{ needs.get-version.outputs.version }}'
-          releaseBody: 'See the changelog for details.'
-          releaseDraft: true
-          prerelease: false
-          args: --target x86_64-apple-darwin
-          updater: false
-
-  build-macos-arm:
-    needs: [get-version, build-windows]
-    runs-on: macos-latest
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-      
-      - name: Install dependencies
-        run: npm ci
-      
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-      
-      - name: Build frontend
-        run: npm run build
-      
-      - name: Build Tauri app (macOS ARM)
-        uses: tauri-apps/tauri-action@v0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          projectPath: .
-          tagName: v${{ needs.get-version.outputs.version }}
-          releaseName: 'OpCode Logic v${{ needs.get-version.outputs.version }}'
-          releaseBody: 'See the changelog for details.'
-          releaseDraft: true
-          prerelease: false
-          args: --target aarch64-apple-darwin
-          updater: false
-
-  # Note: tauri-action automatically creates and publishes releases
-  # This job is kept for reference but may not be needed
+          tagName: v${{ needs.create-release.outputs.version }}
+          # releaseIdを指定することで、create-releaseで作ったリリースにアセットを追加するモードになる
+          releaseId: ${{ needs.create-release.outputs.release_id }}
+          args: ${{ matrix.args }}
