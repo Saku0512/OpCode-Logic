@@ -30,6 +30,8 @@ jobs:
   build-windows:
     needs: get-version
     runs-on: windows-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
       
@@ -56,14 +58,39 @@ jobs:
           projectPath: .
           tagName: v${{ needs.get-version.outputs.version }}
           releaseName: 'OpCode Logic v${{ needs.get-version.outputs.version }}'
-          releaseBody: 'See the changelog for details.'
+          releaseBody: |
+            ## OpCode Logic v${{ needs.get-version.outputs.version }}
+            
+            ### ダウンロード
+            
+            #### Windows
+            - **Installer (NSIS)**: `opecode-logic_${{ needs.get-version.outputs.version }}_x64-setup.exe`
+            - **Installer (MSI)**: `opecode-logic_${{ needs.get-version.outputs.version }}_x64_en-US.msi`
+            
+            #### Linux
+            - **AppImage**: `opecode-logic_${{ needs.get-version.outputs.version }}_amd64.AppImage`
+            - **Debian Package**: `opecode-logic_${{ needs.get-version.outputs.version }}_amd64.deb`
+            
+            #### macOS
+            - **Intel (x64)**: `opecode-logic_${{ needs.get-version.outputs.version }}_x64.dmg`
+            - **Apple Silicon (ARM64)**: `opecode-logic_${{ needs.get-version.outputs.version }}_aarch64.dmg`
+            
+            ### インストール方法
+            
+            - **Windows**: `.exe`または`.msi`ファイルを実行
+            - **Linux**: 
+              - AppImage: `chmod +x *.AppImage && ./opecode-logic_*.AppImage`
+              - DEB: `sudo dpkg -i *.deb`
+            - **macOS**: `.dmg`ファイルを開き、アプリをApplicationsフォルダにドラッグ
           releaseDraft: true
           prerelease: false
           args: --target x86_64-pc-windows-msvc
 
   build-linux:
-    needs: get-version
+    needs: [get-version, build-windows]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
       
@@ -99,10 +126,13 @@ jobs:
           releaseDraft: true
           prerelease: false
           args: --target x86_64-unknown-linux-gnu
+          updater: false
 
   build-macos-intel:
-    needs: get-version
+    needs: [get-version, build-windows]
     runs-on: macos-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
       
@@ -127,16 +157,19 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           projectPath: .
-          tagName: v${{ needs.create-release.outputs.version }}
-          releaseName: 'OpCode Logic v${{ needs.create-release.outputs.version }}'
+          tagName: v${{ needs.get-version.outputs.version }}
+          releaseName: 'OpCode Logic v${{ needs.get-version.outputs.version }}'
           releaseBody: 'See the changelog for details.'
           releaseDraft: true
           prerelease: false
           args: --target x86_64-apple-darwin
+          updater: false
 
   build-macos-arm:
-    needs: get-version
+    needs: [get-version, build-windows]
     runs-on: macos-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
       
@@ -167,6 +200,7 @@ jobs:
           releaseDraft: true
           prerelease: false
           args: --target aarch64-apple-darwin
+          updater: false
 
   # Note: tauri-action automatically creates and publishes releases
   # This job is kept for reference but may not be needed
