@@ -2,6 +2,8 @@ pub mod vm;
 pub mod levels;
 
 use serde::{Serialize};
+use std::fs;
+use std::path::PathBuf;
 
 #[derive(Serialize)]
 struct SimulationResult {
@@ -14,6 +16,35 @@ struct SimulationResult {
 #[tauri::command]
 fn get_levels() -> Vec<levels::Level> {
     levels::get_levels()
+}
+
+#[tauri::command]
+fn get_level_explanation(level_id: String) -> Result<String, String> {
+    // レベルIDからファイルパスを生成
+    // 例: "01_Mov&Call" -> "stages/1.The-Accumulator/Phase1-Registers&ALU/01_Mov&Call.md"
+    let file_path = match level_id.as_str() {
+        "01_Mov&Call" => "stages/1.The-Accumulator/Phase1-Registers&ALU/01_Mov&Call.md",
+        "02_Addition" => "stages/1.The-Accumulator/Phase1-Registers&ALU/02_Addition.md",
+        "03_Subtraction" => "stages/1.The-Accumulator/Phase1-Registers&ALU/03_Subtraction.md",
+        "04_TheXORTrick" => "stages/1.The-Accumulator/Phase1-Registers&ALU/04_TheXORTrick.md",
+        "05_Inc&Dec" => "stages/1.The-Accumulator/Phase1-Registers&ALU/05_Inc&Dec.md",
+        "06_Unconditional" => "stages/1.The-Accumulator/Phase2-Flags&Jumps/06_Unconditional.md",
+        "07_ZeroFlag" => "stages/1.The-Accumulator/Phase2-Flags&Jumps/07_ZeroFlag.md",
+        "08_SignFlag" => "stages/1.The-Accumulator/Phase2-Flags&Jumps/08_SignFlag.md",
+        "09_Comparison" => "stages/1.The-Accumulator/Phase2-Flags&Jumps/09_Conmparison.md",
+        "10_Countdown" => "stages/1.The-Accumulator/Phase3-LoopStructures/10_Countdown.md",
+        "11_Accumulate3" => "stages/1.The-Accumulator/Phase3-LoopStructures/11_Accumulate3.md",
+        "12_TheAccumulator" => "stages/1.The-Accumulator/BOSS/TheAccumulator.md",
+        _ => return Err(format!("Explanation not found for level: {}", level_id)),
+    };
+
+    // プロジェクトルートからの相対パスで読み込む
+    let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    path.pop(); // src-tauri から出る
+    path.push(file_path);
+
+    fs::read_to_string(&path)
+        .map_err(|e| format!("Failed to read explanation file: {}", e))
 }
 
 #[tauri::command]
@@ -122,7 +153,7 @@ fn run_simulation(code: &str, syntax: String, input: Vec<i64>, level_id: Option<
 pub fn run() {
     tauri::Builder::default()
     .plugin(tauri_plugin_opener::init())
-    .invoke_handler(tauri::generate_handler![run_simulation, get_levels])
+    .invoke_handler(tauri::generate_handler![run_simulation, get_levels, get_level_explanation])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
 }

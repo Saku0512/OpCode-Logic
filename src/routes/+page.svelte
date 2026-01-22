@@ -5,6 +5,7 @@
   import RegisterView from "$lib/components/RegisterView.svelte";
   import IOView from "$lib/components/IOView.svelte";
   import LevelSelector from "$lib/components/LevelSelector.svelte";
+  import ExplanationView from "$lib/components/ExplanationView.svelte";
 
   let syntax = "Intel";
   let code = "mov rax, rdi\nret";
@@ -212,6 +213,12 @@ _start:
             <span class="icon">📝</span> EDITOR
           </div>
           <Editor bind:code />
+          {#if currentLevel}
+            <ExplanationView 
+              levelId={currentLevel.id} 
+              isCompleted={completedLevels.has(currentLevel.id)} 
+            />
+          {/if}
         </div>
         <div class="right-panel">
           <div class="glass panel-inner">
