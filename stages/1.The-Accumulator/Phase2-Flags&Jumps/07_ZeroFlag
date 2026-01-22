@@ -1,0 +1,9 @@
+グランドステージ: 1.The Accumulator
+
+フェーズ: Phase 2 - Flags & Jumps
+
+ステージ名: Zero Flag
+
+ステージ内容: 入力Aが 0 なら 1 を、それ以外なら 0 を出力せよ。
+
+学習ポイント: test または cmp, jz (Jump if Zero)
