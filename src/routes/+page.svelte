@@ -8,7 +8,20 @@
   import ExplanationView from "$lib/components/ExplanationView.svelte";
 
   let syntax = "Intel";
-  let code = "mov rax, rdi\nret";
+  let code = `section .bss
+    buf resb 16
+
+section .text
+    global _start
+
+_start:
+    ; MISSION: Mov & Call
+    ; read from stdin (syscall 0), write to stdout (syscall 1)
+    
+    ; exit(0)
+    mov rax, 60
+    xor rdi, rdi
+    syscall`;
 
   let currentLevel: any = null;
   let selectedLevelId: string | null = null;
