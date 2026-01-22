@@ -73,13 +73,85 @@ _start:
 
 ## コード解説
 
-1. `mov rax, rdi` - RDIの値をRAXにコピー（合計の初期値 = A）
-2. `add rax, rsi` - RSIの値をRAXに加算（RAX = A + B）
-3. `add rax, rdx` - RDXの値をRAXに加算（RAX = A + B + C）
-4. `ret` - 合計値を返す
+### 入力の読み込み
+```asm
+mov rax, 0          ; syscall: read
+mov rdi, 0          ; stdin
+mov rsi, buf        ; buffer
+mov rdx, 16         ; size
+syscall
+```
+標準入力から最大16バイトを読み込み、`buf`に格納します。
+
+### 累積処理の準備
+```asm
+xor rax, rax        ; sum = 0
+xor rcx, rcx        ; index = 0
+```
+
+1. **`xor rax, rax`** - RAXを0で初期化（合計の初期値）
+2. **`xor rcx, rcx`** - RCXを0で初期化（配列のインデックス）
+
+### 最初の3バイトを累積するループ
+```asm
+.loop:
+    cmp rcx, 3          ; インデックスが3かチェック
+    jge .done_accumulate ; インデックス >= 3なら終了
+    
+    mov bl, byte [buf + rcx]  ; buf[index]の値をBLに読み込む
+    movzx rbx, bl       ; BLを64ビットにゼロ拡張してRBXに格納
+    add rax, rbx        ; 合計に値を加算
+    inc rcx             ; インデックスを1増やす
+    jmp .loop           ; ループの先頭に戻る
+```
+
+3. **`cmp rcx, 3`** - インデックスが3かチェック
+4. **`jge .done_accumulate`** - インデックスが3以上ならループ終了
+   - 最初の3バイトのみを処理するため
+5. **`mov bl, byte [buf + rcx]`** - バッファの現在位置のバイト値をBLに読み込む
+   - BLはRBXの下位8ビット
+6. **`movzx rbx, bl`** - BLを64ビットにゼロ拡張してRBXに格納
+   - `movzx`は"Move with Zero-Extend"の略
+   - 符号なし拡張: 上位ビットを0で埋める
+   - 例: BL=0xFF → RBX=0x00000000000000FF
+7. **`add rax, rbx`** - 合計（RAX）に現在の値（RBX）を加算
+   - RAX = RAX + RBX
+8. **`inc rcx`** - インデックスを1増やす
+9. **`jmp .loop`** - ループの先頭に戻る
+
+### 結果をASCII文字に変換して出力
+```asm
+.done_accumulate:
+    ; convert sum to decimal string
+    ; for simplicity, assume single digit result
+    add al, '0'         ; 合計値（AL）に'0'を足してASCII文字に変換
+    mov byte [out], al  ; 出力バッファにASCII文字を書き込む
+    mov rdx, 1          ; 出力するバイト数（1バイト）
+
+    ; write(1, out, rdx)
+    mov rax, 1          ; syscall: write
+    mov rdi, 1          ; stdout
+    mov rsi, out
+    syscall
+```
+
+10. **`.done_accumulate:`** - ループ終了後の処理
+11. **`add al, '0'`** - 合計値（AL、RAXの下位8ビット）に'0'を足してASCII文字に変換
+    - このコードは合計が1桁（0-9）であることを前提としている
+12. **`mov byte [out], al`** - 変換したASCII文字を出力バッファに書き込む
+13. **`mov rdx, 1`** - 出力するバイト数を1に設定
+14. **システムコールwrite** - 結果を標準出力に書き出し
 
 ## ポイント
 
-- 複数の値を加算する場合は、1つずつ順番に加算します
-- ADD命令は累積的に値を加算できます
-- この方法はシンプルで効率的です
+- **MOVZX命令**: 符号なし拡張（Zero-Extend）
+  - 8ビット（BL）を64ビット（RBX）に拡張
+  - 上位ビットを0で埋める
+  - 符号付き拡張の場合は`movsx`（Sign-Extend）を使用
+- **累積処理**: ループで値を1つずつ加算していく
+  - 初期値を0に設定
+  - 各反復で現在の値を合計に加算
+- **範囲制限**: `cmp rcx, 3`で最初の3バイトのみを処理
+- **ASCII変換**: 数値結果をASCII文字に変換して出力
+  - このコードは1桁の結果を前提としている
+  - 複数桁の場合は除算と剰余演算が必要

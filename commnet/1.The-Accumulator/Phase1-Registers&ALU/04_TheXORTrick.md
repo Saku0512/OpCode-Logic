@@ -64,12 +64,69 @@ _start:
 
 ## コード解説
 
-1. `mov rax, rdi` - RDIの値をRAXにコピー
-2. `xor rax, rax` - RAXとRAXをXOR（結果は常に0）
-3. `ret` - 0を戻り値として返す
+### 入力の読み込み
+```asm
+mov rax, 0          ; syscall: read
+mov rdi, 0          ; stdin
+mov rsi, buf        ; buffer
+mov rdx, 16         ; size
+syscall
+```
+標準入力から最大16バイトを読み込み、`buf`に格納します。
+
+### ループ処理の準備
+```asm
+mov rcx, rax        ; number of bytes read
+xor r8, r8          ; index = 0
+```
+1. **`mov rcx, rax`** - 読み込んだバイト数をRCXに保存
+2. **`xor r8, r8`** - R8を0で初期化（XORトリックを使用）
+
+### 各バイトと0x20をXORするループ
+```asm
+.loop:
+    cmp r8, rcx          ; インデックスと読み込んだバイト数を比較
+    jge .done_xor        ; インデックス >= バイト数なら終了
+    mov al, byte [buf + r8]  ; buf[index]の値をALに読み込む
+    xor al, 0x20         ; ALと0x20をXOR演算
+    mov byte [buf + r8], al  ; 計算結果をbuf[index]に書き戻す
+    inc r8               ; インデックスを1増やす
+    jmp .loop            ; ループの先頭に戻る
+```
+
+1. **`cmp r8, rcx`** - 現在のインデックスと読み込んだバイト数を比較
+2. **`jge .done_xor`** - インデックスがバイト数以上ならループ終了
+3. **`mov al, byte [buf + r8]`** - バッファの現在位置のバイト値をALに読み込む
+4. **`xor al, 0x20`** - ALと0x20（32、2進数で00100000）をXOR演算
+   - XORの性質: 同じビット位置で異なる値なら1、同じ値なら0
+   - 0x20は6ビット目（0から数えて5番目）だけが1
+   - この操作で6ビット目を反転（大文字↔小文字の変換などに使用）
+5. **`mov byte [buf + r8], al`** - 計算結果を元の位置に書き戻す
+6. **`inc r8`** - インデックスを1増やす
+7. **`jmp .loop`** - ループの先頭に戻る
+
+### 結果の出力
+```asm
+.done_xor:
+    mov rdx, rcx        ; number of bytes to write
+    mov rax, 1          ; syscall: write
+    mov rdi, 1          ; stdout
+    mov rsi, buf
+    syscall
+```
+処理済みのバッファを標準出力に書き出します。
 
 ## ポイント
 
-- `xor rax, rax` は `mov rax, 0` と同じ結果ですが、より効率的です
-- これはx86アーキテクチャでよく使われる最適化テクニックです
-- XORはビット単位の排他的論理和演算です
+- **XOR演算**: ビット単位の排他的論理和
+  - `0 XOR 0 = 0`
+  - `0 XOR 1 = 1`
+  - `1 XOR 0 = 1`
+  - `1 XOR 1 = 0`
+- **0x20の意味**: 32（10進数）、2進数で`00100000`
+  - 6ビット目だけを反転させる
+  - ASCII文字では大文字と小文字の変換に使用（例: 'A'=0x41, 'a'=0x61）
+- **XORの性質**: 
+  - 同じ値同士をXORすると0になる（`A XOR A = 0`）
+  - XORは可逆演算（`(A XOR B) XOR B = A`）
+- **即値の指定**: `0x20`は16進数表記（`$32`でも可）
