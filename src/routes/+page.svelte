@@ -62,11 +62,45 @@
   }
 
   function applyDefaultCode(levelId: string) {
-    if (levelId === "12_TheAccumulator") {
-      code =
-        "; IN RAX reads next input\n; sum = sum + RAX\n; if RAX == 0, end loop\n\nxor rax, rax\nloop:\n    in rbx\n    cmp rbx, 0\n    jz done\n    add rax, rbx\n    jmp loop\ndone:\n    ret";
+    if (levelId === "01_Mov&Call") {
+      code = `section .bss
+    buf resb 16
+
+section .text
+    global _start
+
+_start:
+    ; MISSION: Mov & Call
+    ; read from stdin (syscall 0), write to stdout (syscall 1)
+    
+    ; exit(0)
+    mov rax, 60
+    xor rdi, rdi
+    syscall`;
+    } else if (levelId === "12_TheAccumulator") {
+      code = `section .text
+    global _start
+
+_start:
+    ; MISSION: The Accumulator
+    ; Read inputs using 'IN' until 0 is encountered.
+    ; Return the sum in RAX.
+    
+    ; exit(k)
+    mov rax, 60
+    mov rdi, 0 ; or result
+    syscall`;
     } else {
-      code = "mov rax, rdi\nret";
+      code = `section .text
+    global _start
+
+_start:
+    ; Implement mission logic here
+    
+    ; exit(0)
+    mov rax, 60
+    xor rdi, rdi
+    syscall`;
     }
   }
 

@@ -23,23 +23,20 @@ fn run_simulation(code: &str, syntax: String, input: Vec<i64>, level_id: Option<
         _ => return Err("Invalid syntax type".to_string()),
     };
 
-    let (program, labels) = vm::parse_program(code, syntax_enum.clone())?;
+    let (program, labels, data_labels) = vm::parse_program(code, syntax_enum.clone())?;
     
     // If level_id is provided, verify against ALL test cases
     if let Some(lid) = level_id {
         if let Some(level) = levels::get_level(&lid) {
             for (idx, (test_in, expected)) in level.test_cases.iter().enumerate() {
-                let mut vm = vm::VM::new(program.clone(), labels.clone(), test_in.clone());
+                let mut vm = vm::VM::new(program.clone(), labels.clone(), data_labels.clone(), test_in.clone());
                 
                 let mut steps = 0;
                 while vm.step() {
                     steps += 1;
-                    if steps > 5000 { break; } // infinite loop protection
+                    if steps > 20000 { break; } // complex programs might need more steps
 
                     if !expected.is_empty() && vm.get_state().output.len() >= expected.len() {
-                        // For stream levels, we can stop early if we have enough output
-                        // But for RAX levels, we might need to continue until RET.
-                        // Actually, if it's a stream level (length > 1 or specific id), we stop.
                         if expected.len() > 1 || level.id == "06_Unconditional" {
                             break;
                         }
@@ -48,13 +45,15 @@ fn run_simulation(code: &str, syntax: String, input: Vec<i64>, level_id: Option<
 
                 // Validation
                 let state = vm.get_state();
-                let output_correct = if expected.len() > 1 || level.id == "06_Unconditional" {
-                    // Expecting Stream
-                     state.output.len() >= expected.len() && &state.output[0..expected.len()] == expected.as_slice()
-                } else {
-                    // Expecting RAX Return
+                let output_correct = if !state.output.is_empty() {
+                    // Prioritize Stream check if output was produced
+                    state.output.len() >= expected.len() && &state.output[0..expected.len()] == expected.as_slice()
+                } else if expected.len() == 1 {
+                    // Fallback to RAX if no stream output was produced but we expect 1 value
                     let rax = vm.get_register(vm::Register::RAX);
                     rax == expected[0]
+                } else {
+                    false
                 };
 
                 if !output_correct {
@@ -70,12 +69,12 @@ fn run_simulation(code: &str, syntax: String, input: Vec<i64>, level_id: Option<
     }
 
     // Single Run (Visualization)
-    let mut vm = vm::VM::new(program, labels, input);
+    let mut vm = vm::VM::new(program, labels, data_labels, input);
     
     let mut steps = 0;
     while vm.step() {
         steps += 1;
-        if steps > 2000 { return Err("Time Limit Exceeded (Visualization)".to_string()); }
+        if steps > 10000 { break; }
     }
     
     Ok(SimulationResult {
