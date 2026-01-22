@@ -621,4 +621,517 @@ mod tests {
         let state = vm.get_state();
         assert_eq!(state.output, vec![42]);
     }
+
+    #[test]
+    fn test_mov_instructions() {
+        let code = "
+            mov rax, 100
+            mov rbx, rax
+            mov rcx, -50
+        ";
+        let (prog, labels, data) = parse_program(code, Syntax::Intel).unwrap();
+        let mut vm = VM::new(prog, labels, data, vec![]);
+        while vm.step() {}
+        assert_eq!(vm.get_register(Register::RAX), 100);
+        assert_eq!(vm.get_register(Register::RBX), 100);
+        assert_eq!(vm.get_register(Register::RCX), -50);
+    }
+
+    #[test]
+    fn test_add_instructions() {
+        let code = "
+            mov rax, 10
+            add rax, 20
+            add rax, -5
+        ";
+        let (prog, labels, data) = parse_program(code, Syntax::Intel).unwrap();
+        let mut vm = VM::new(prog, labels, data, vec![]);
+        while vm.step() {}
+        assert_eq!(vm.get_register(Register::RAX), 25);
+    }
+
+    #[test]
+    fn test_sub_instructions() {
+        let code = "
+            mov rax, 50
+            sub rax, 20
+            sub rax, 10
+        ";
+        let (prog, labels, data) = parse_program(code, Syntax::Intel).unwrap();
+        let mut vm = VM::new(prog, labels, data, vec![]);
+        while vm.step() {}
+        assert_eq!(vm.get_register(Register::RAX), 20);
+    }
+
+    #[test]
+    fn test_inc_dec_instructions() {
+        let code = "
+            mov rax, 10
+            inc rax
+            inc rax
+            dec rax
+        ";
+        let (prog, labels, data) = parse_program(code, Syntax::Intel).unwrap();
+        let mut vm = VM::new(prog, labels, data, vec![]);
+        while vm.step() {}
+        assert_eq!(vm.get_register(Register::RAX), 11);
+    }
+
+    #[test]
+    fn test_xor_instruction() {
+        let code = "
+            mov rax, 10
+            xor rax, rax
+        ";
+        let (prog, labels, data) = parse_program(code, Syntax::Intel).unwrap();
+        let mut vm = VM::new(prog, labels, data, vec![]);
+        while vm.step() {}
+        assert_eq!(vm.get_register(Register::RAX), 0);
+        let state = vm.get_state();
+        assert!(state.zf);
+    }
+
+    #[test]
+    fn test_zero_flag() {
+        let code = "
+            mov rax, 0
+            add rax, 0
+        ";
+        let (prog, labels, data) = parse_program(code, Syntax::Intel).unwrap();
+        let mut vm = VM::new(prog, labels, data, vec![]);
+        while vm.step() {}
+        let state = vm.get_state();
+        assert!(state.zf);
+        assert!(!state.sf);
+    }
+
+    #[test]
+    fn test_sign_flag() {
+        let code = "
+            mov rax, -10
+            add rax, 0
+        ";
+        let (prog, labels, data) = parse_program(code, Syntax::Intel).unwrap();
+        let mut vm = VM::new(prog, labels, data, vec![]);
+        while vm.step() {}
+        let state = vm.get_state();
+        assert!(!state.zf);
+        assert!(state.sf);
+    }
+
+    #[test]
+    fn test_cmp_instruction() {
+        let code = "
+            mov rax, 10
+            mov rbx, 20
+            cmp rax, rbx
+        ";
+        let (prog, labels, data) = parse_program(code, Syntax::Intel).unwrap();
+        let mut vm = VM::new(prog, labels, data, vec![]);
+        while vm.step() {}
+        let state = vm.get_state();
+        assert!(!state.zf);
+        assert!(state.sf); // 10 - 20 = -10, negative
+    }
+
+    #[test]
+    fn test_jmp_instruction() {
+        let code = "
+            mov rax, 1
+            jmp skip
+            mov rax, 2
+        skip:
+            mov rax, 3
+        ";
+        let (prog, labels, data) = parse_program(code, Syntax::Intel).unwrap();
+        let mut vm = VM::new(prog, labels, data, vec![]);
+        while vm.step() {}
+        assert_eq!(vm.get_register(Register::RAX), 3);
+    }
+
+    #[test]
+    fn test_jz_instruction() {
+        let code = "
+            mov rax, 0
+            add rax, 0
+            jz zero_label
+            mov rax, 99
+            jmp end
+        zero_label:
+            mov rax, 42
+        end:
+        ";
+        let (prog, labels, data) = parse_program(code, Syntax::Intel).unwrap();
+        let mut vm = VM::new(prog, labels, data, vec![]);
+        while vm.step() {}
+        assert_eq!(vm.get_register(Register::RAX), 42);
+    }
+
+    #[test]
+    fn test_jnz_instruction() {
+        let code = "
+            mov rax, 5
+            add rax, 0
+            jnz non_zero_label
+            mov rax, 99
+            jmp end
+        non_zero_label:
+            mov rax, 42
+        end:
+        ";
+        let (prog, labels, data) = parse_program(code, Syntax::Intel).unwrap();
+        let mut vm = VM::new(prog, labels, data, vec![]);
+        while vm.step() {}
+        assert_eq!(vm.get_register(Register::RAX), 42);
+    }
+
+    #[test]
+    fn test_js_instruction() {
+        let code = "
+            mov rax, -5
+            add rax, 0
+            js negative_label
+            mov rax, 99
+            jmp end
+        negative_label:
+            mov rax, 42
+        end:
+        ";
+        let (prog, labels, data) = parse_program(code, Syntax::Intel).unwrap();
+        let mut vm = VM::new(prog, labels, data, vec![]);
+        while vm.step() {}
+        assert_eq!(vm.get_register(Register::RAX), 42);
+    }
+
+    #[test]
+    fn test_push_pop() {
+        let code = "
+            mov rax, 100
+            push rax
+            mov rax, 0
+            pop rbx
+        ";
+        let (prog, labels, data) = parse_program(code, Syntax::Intel).unwrap();
+        let mut vm = VM::new(prog, labels, data, vec![]);
+        while vm.step() {}
+        assert_eq!(vm.get_register(Register::RBX), 100);
+    }
+
+    #[test]
+    fn test_in_out_instructions() {
+        let code = "
+            in rax
+            out rax
+        ";
+        let (prog, labels, data) = parse_program(code, Syntax::Intel).unwrap();
+        let mut vm = VM::new(prog, labels, data, vec![123]);
+        while vm.step() {}
+        let state = vm.get_state();
+        assert_eq!(state.output, vec![123]);
+    }
+
+    #[test]
+    fn test_ret_instruction() {
+        let code = "
+            mov rax, 42
+            ret
+            mov rax, 99
+        ";
+        let (prog, labels, data) = parse_program(code, Syntax::Intel).unwrap();
+        let mut vm = VM::new(prog, labels, data, vec![]);
+        while vm.step() {}
+        assert_eq!(vm.get_register(Register::RAX), 42);
+        let state = vm.get_state();
+        assert!(state.finished);
+    }
+
+    #[test]
+    fn test_memory_operations() {
+        let code = "
+            section .bss
+            buf resb 16
+            
+            section .text
+            mov rax, 12345
+            mov [buf], rax
+            mov rbx, [buf]
+            mov rcx, rbx
+        ";
+        let (prog, labels, data) = parse_program(code, Syntax::Intel).unwrap();
+        let mut vm = VM::new(prog, labels, data, vec![]);
+        while vm.step() {}
+        assert_eq!(vm.get_register(Register::RBX), 12345);
+        assert_eq!(vm.get_register(Register::RCX), 12345);
+    }
+
+    #[test]
+    fn test_att_syntax() {
+        let code = "
+            movq $100, %rax
+            movq %rax, %rbx
+        ";
+        let (prog, labels, data) = parse_program(code, Syntax::Att).unwrap();
+        let mut vm = VM::new(prog, labels, data, vec![]);
+        while vm.step() {}
+        assert_eq!(vm.get_register(Register::RAX), 100);
+        assert_eq!(vm.get_register(Register::RBX), 100);
+    }
+
+    #[test]
+    fn test_parse_operand_register() {
+        assert!(matches!(parse_operand("rax").unwrap(), Operand::Reg(Register::RAX)));
+        assert!(matches!(parse_operand("RAX").unwrap(), Operand::Reg(Register::RAX)));
+        assert!(matches!(parse_operand("%rax").unwrap(), Operand::Reg(Register::RAX)));
+    }
+
+    #[test]
+    fn test_parse_operand_immediate() {
+        assert!(matches!(parse_operand("100").unwrap(), Operand::Imm(100)));
+        assert!(matches!(parse_operand("$100").unwrap(), Operand::Imm(100)));
+        assert!(matches!(parse_operand("-50").unwrap(), Operand::Imm(-50)));
+    }
+
+    #[test]
+    fn test_parse_operand_memory() {
+        assert!(matches!(parse_operand("[rax]").unwrap(), Operand::MemReg(Register::RAX)));
+        assert!(matches!(parse_operand("[buf]").unwrap(), Operand::MemLabel(_)));
+    }
+
+    #[test]
+    fn test_wrapping_arithmetic() {
+        let code = "
+            mov rax, 9223372036854775807
+            add rax, 1
+        ";
+        let (prog, labels, data) = parse_program(code, Syntax::Intel).unwrap();
+        let mut vm = VM::new(prog, labels, data, vec![]);
+        while vm.step() {}
+        // Should wrap around to negative
+        assert_eq!(vm.get_register(Register::RAX), -9223372036854775808i64);
+    }
+
+    #[test]
+    fn test_multiple_registers() {
+        let code = "
+            mov rax, 1
+            mov rbx, 2
+            mov rcx, 3
+            mov rdx, 4
+            mov r8, 8
+            mov r9, 9
+        ";
+        let (prog, labels, data) = parse_program(code, Syntax::Intel).unwrap();
+        let mut vm = VM::new(prog, labels, data, vec![]);
+        while vm.step() {}
+        assert_eq!(vm.get_register(Register::RAX), 1);
+        assert_eq!(vm.get_register(Register::RBX), 2);
+        assert_eq!(vm.get_register(Register::RCX), 3);
+        assert_eq!(vm.get_register(Register::RDX), 4);
+        assert_eq!(vm.get_register(Register::R8), 8);
+        assert_eq!(vm.get_register(Register::R9), 9);
+    }
+
+    #[test]
+    fn test_loop_structure() {
+        let code = "
+            mov rax, 0
+            mov rcx, 5
+        loop_start:
+            add rax, 1
+            dec rcx
+            jnz loop_start
+        ";
+        let (prog, labels, data) = parse_program(code, Syntax::Intel).unwrap();
+        let mut vm = VM::new(prog, labels, data, vec![]);
+        let mut steps = 0;
+        while vm.step() && steps < 100 {
+            steps += 1;
+        }
+        assert_eq!(vm.get_register(Register::RAX), 5);
+        assert_eq!(vm.get_register(Register::RCX), 0);
+    }
+
+    #[test]
+    fn test_parse_empty_program() {
+        let (prog, labels, data) = parse_program("", Syntax::Intel).unwrap();
+        assert_eq!(prog.len(), 0);
+        assert_eq!(labels.len(), 0);
+        assert_eq!(data.len(), 0);
+    }
+
+    #[test]
+    fn test_parse_comments() {
+        let code = "
+            ; This is a comment
+            mov rax, 10 ; Inline comment
+            # Another comment style
+            mov rbx, 20
+        ";
+        let (prog, labels, data) = parse_program(code, Syntax::Intel).unwrap();
+        assert_eq!(prog.len(), 2);
+    }
+
+    #[test]
+    fn test_parse_multiple_labels() {
+        let code = "
+        label1:
+            mov rax, 1
+        label2:
+            mov rbx, 2
+        label3:
+            mov rcx, 3
+        ";
+        let (prog, labels, data) = parse_program(code, Syntax::Intel).unwrap();
+        assert!(labels.contains_key("label1"));
+        assert!(labels.contains_key("label2"));
+        assert!(labels.contains_key("label3"));
+    }
+
+    #[test]
+    fn test_parse_whitespace_handling() {
+        let code = "
+            mov   rax,   10
+            mov    rbx,20
+            mov rcx, 30
+        ";
+        let (prog, labels, data) = parse_program(code, Syntax::Intel).unwrap();
+        assert_eq!(prog.len(), 3);
+    }
+
+    #[test]
+    fn test_parse_directive_ignoring() {
+        let code = "
+            global _start
+            extern printf
+            default rel
+            bits 64
+            mov rax, 10
+        ";
+        let (prog, labels, data) = parse_program(code, Syntax::Intel).unwrap();
+        assert_eq!(prog.len(), 1);
+    }
+
+    #[test]
+    fn test_parse_invalid_instruction() {
+        let result = parse_program("invalid_instruction rax, rbx", Syntax::Intel);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_parse_missing_operands() {
+        let result = parse_program("mov rax", Syntax::Intel);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_parse_all_registers() {
+        let code = "
+            mov rax, 1
+            mov rbx, 2
+            mov rcx, 3
+            mov rdx, 4
+            mov rsi, 5
+            mov rdi, 6
+            mov rsp, 7
+            mov rbp, 8
+            mov r8, 9
+            mov r9, 10
+            mov r10, 11
+            mov r11, 12
+            mov r12, 13
+            mov r13, 14
+            mov r14, 15
+            mov r15, 16
+        ";
+        let (prog, labels, data) = parse_program(code, Syntax::Intel).unwrap();
+        assert_eq!(prog.len(), 16);
+    }
+
+    #[test]
+    fn test_parse_instruction_variants() {
+        let code = "
+            mov rax, 1
+            movq rax, 2
+            add rax, 3
+            addq rax, 4
+            sub rax, 5
+            subq rax, 6
+            inc rax
+            incq rax
+            dec rax
+            decq rax
+        ";
+        let (prog, labels, data) = parse_program(code, Syntax::Intel).unwrap();
+        assert_eq!(prog.len(), 10);
+    }
+
+    #[test]
+    fn test_parse_jump_variants() {
+        let code = "
+        label:
+            jmp label
+            jz label
+            je label
+            jnz label
+            jne label
+            js label
+        ";
+        let (prog, labels, data) = parse_program(code, Syntax::Intel).unwrap();
+        assert_eq!(prog.len(), 6);
+    }
+
+    #[test]
+    fn test_parse_ret_variants() {
+        let code = "
+            ret
+            retq
+        ";
+        let (prog, labels, data) = parse_program(code, Syntax::Intel).unwrap();
+        assert_eq!(prog.len(), 2);
+    }
+
+    #[test]
+    fn test_parse_push_pop_variants() {
+        let code = "
+            push rax
+            pushq rax
+            pop rbx
+            popq rbx
+        ";
+        let (prog, labels, data) = parse_program(code, Syntax::Intel).unwrap();
+        assert_eq!(prog.len(), 4);
+    }
+
+    #[test]
+    fn test_parse_large_immediate() {
+        let code = "
+            mov rax, 9223372036854775807
+            mov rbx, -9223372036854775808
+        ";
+        let (prog, labels, data) = parse_program(code, Syntax::Intel).unwrap();
+        let mut vm = VM::new(prog, labels, data, vec![]);
+        while vm.step() {}
+        assert_eq!(vm.get_register(Register::RAX), 9223372036854775807i64);
+        assert_eq!(vm.get_register(Register::RBX), -9223372036854775808i64);
+    }
+
+    #[test]
+    fn test_parse_memory_operations() {
+        let code = "
+            section .bss
+            buf1 resb 8
+            buf2 resb 16
+            
+            section .text
+            mov rax, 100
+            mov [buf1], rax
+            mov rbx, [buf1]
+            mov [rbx], rax
+            mov rcx, [rbx]
+        ";
+        let (prog, labels, data) = parse_program(code, Syntax::Intel).unwrap();
+        assert!(data.contains_key("buf1"));
+        assert!(data.contains_key("buf2"));
+        assert_eq!(prog.len(), 5);
+    }
 }

@@ -137,3 +137,53 @@ pub fn get_levels() -> Vec<Level> {
 pub fn get_level(id: &str) -> Option<Level> {
     get_levels().into_iter().find(|l| l.id == id)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_get_levels() {
+        let levels = get_levels();
+        assert!(!levels.is_empty());
+        assert!(levels.len() >= 12);
+    }
+
+    #[test]
+    fn test_get_level_by_id() {
+        assert!(get_level("01_Mov&Call").is_some());
+        assert!(get_level("02_Addition").is_some());
+        assert!(get_level("12_TheAccumulator").is_some());
+        assert!(get_level("nonexistent").is_none());
+    }
+
+    #[test]
+    fn test_level_01_mov_call() {
+        let level = get_level("01_Mov&Call").unwrap();
+        assert_eq!(level.id, "01_Mov&Call");
+        assert_eq!(level.test_cases.len(), 3);
+        assert_eq!(level.test_cases[0], (vec![123], vec![123]));
+    }
+
+    #[test]
+    fn test_level_02_addition() {
+        let level = get_level("02_Addition").unwrap();
+        assert_eq!(level.test_cases.len(), 3);
+        assert_eq!(level.test_cases[0], (vec![10, 20], vec![30]));
+    }
+
+    #[test]
+    fn test_level_05_inc_dec() {
+        let level = get_level("05_Inc&Dec").unwrap();
+        // Stream output test case
+        assert_eq!(level.test_cases[0], (vec![10], vec![11, 9]));
+    }
+
+    #[test]
+    fn test_all_levels_have_test_cases() {
+        let levels = get_levels();
+        for level in levels {
+            assert!(!level.test_cases.is_empty(), "Level {} has no test cases", level.id);
+        }
+    }
+}
