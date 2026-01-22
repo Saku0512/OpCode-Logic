@@ -1,0 +1,172 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'  # v0.1.0, v1.0.0 などのタグでトリガー
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., 0.1.0)'
+        required: true
+        type: string
+
+jobs:
+  get-version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Get version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            VERSION=${GITHUB_REF#refs/tags/v}
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+          fi
+
+  build-windows:
+    needs: get-version
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+      
+      - name: Build frontend
+        run: npm run build
+      
+      - name: Build Tauri app (Windows)
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: .
+          tagName: v${{ needs.get-version.outputs.version }}
+          releaseName: 'OpCode Logic v${{ needs.get-version.outputs.version }}'
+          releaseBody: 'See the changelog for details.'
+          releaseDraft: true
+          prerelease: false
+          args: --target x86_64-pc-windows-msvc
+
+  build-linux:
+    needs: get-version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+      
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
+      
+      - name: Build frontend
+        run: npm run build
+      
+      - name: Build Tauri app (Linux)
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: .
+          tagName: v${{ needs.get-version.outputs.version }}
+          releaseName: 'OpCode Logic v${{ needs.get-version.outputs.version }}'
+          releaseBody: 'See the changelog for details.'
+          releaseDraft: true
+          prerelease: false
+          args: --target x86_64-unknown-linux-gnu
+
+  build-macos-intel:
+    needs: get-version
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+      
+      - name: Build frontend
+        run: npm run build
+      
+      - name: Build Tauri app (macOS Intel)
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: .
+          tagName: v${{ needs.create-release.outputs.version }}
+          releaseName: 'OpCode Logic v${{ needs.create-release.outputs.version }}'
+          releaseBody: 'See the changelog for details.'
+          releaseDraft: true
+          prerelease: false
+          args: --target x86_64-apple-darwin
+
+  build-macos-arm:
+    needs: get-version
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+      
+      - name: Build frontend
+        run: npm run build
+      
+      - name: Build Tauri app (macOS ARM)
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: .
+          tagName: v${{ needs.get-version.outputs.version }}
+          releaseName: 'OpCode Logic v${{ needs.get-version.outputs.version }}'
+          releaseBody: 'See the changelog for details.'
+          releaseDraft: true
+          prerelease: false
+          args: --target aarch64-apple-darwin
+
+  # Note: tauri-action automatically creates and publishes releases
+  # This job is kept for reference but may not be needed
