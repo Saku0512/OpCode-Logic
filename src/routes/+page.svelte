@@ -1,156 +1,190 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/core";
+  import Editor from "$lib/components/Editor.svelte";
+  import RegisterView from "$lib/components/RegisterView.svelte";
 
-  let name = $state("");
-  let greetMsg = $state("");
+  // We can reuse IOView for visual feedback of "Input Arguments" and "Return Value"
+  import IOView from "$lib/components/IOView.svelte";
 
-  async function greet(event: Event) {
-    event.preventDefault();
-    // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-    greetMsg = await invoke("greet", { name });
+  let syntax = "Intel";
+  let code = "mov rax, rdi\nadd rax, rsi";
+  let input = [10, 20];
+  let expected = [30];
+
+  // Initialize with 0s
+  let registers: Record<string, number> = {};
+
+  // For UI display, we'll strip 'output' to just show what RAX is, or keep the queue concept if we want
+  // But since the new VM doesn't return an output queue, we'll map the RESULT (RAX) to output.
+  let output: number[] = [];
+
+  let status = "Ready";
+  let error: string | null = null;
+
+  function changeSyntax() {
+    if (syntax === "Intel") {
+      code = "mov rax, rdi\nadd rax, rsi";
+    } else {
+      code = "movq %rdi, %rax\naddq %rsi, %rax";
+    }
+  }
+
+  async function runSimulation() {
+    status = "Running...";
+    error = null;
+    output = [];
+
+    try {
+      const result: any = await invoke("run_simulation", {
+        code,
+        syntax,
+        input,
+      });
+
+      // Update registers strictly from result
+      registers = result.registers;
+
+      // Determine "Output" as RAX value
+      const resultVal = result.registers["RAX"] || 0;
+      output = [resultVal];
+
+      if (result.error) {
+        error = result.error;
+        status = "Error";
+      } else {
+        // Check correctness
+        const isCorrect = output[0] === expected[0];
+        status = isCorrect ? "SUCCESS!" : "Failed - Incorrect Output";
+      }
+    } catch (e) {
+      error = String(e);
+      status = "Error";
+    }
   }
 </script>
 
 <main class="container">
-  <h1>Welcome to Tauri + Svelte</h1>
+  <div class="header">
+    <div class="title-group">
+      <h1>OpCode Logic</h1>
+      <select
+        bind:value={syntax}
+        on:change={changeSyntax}
+        class="syntax-select"
+      >
+        <option value="Intel">Intel Syntax</option>
+        <option value="Att">AT&T Syntax</option>
+      </select>
+    </div>
 
-  <div class="row">
-    <a href="https://vite.dev" target="_blank">
-      <img src="/vite.svg" class="logo vite" alt="Vite Logo" />
-    </a>
-    <a href="https://tauri.app" target="_blank">
-      <img src="/tauri.svg" class="logo tauri" alt="Tauri Logo" />
-    </a>
-    <a href="https://svelte.dev" target="_blank">
-      <img src="/svelte.svg" class="logo svelte-kit" alt="SvelteKit Logo" />
-    </a>
+    <div
+      class="status"
+      class:success={status === "SUCCESS!"}
+      class:error={status === "Error" || status.startsWith("Failed")}
+    >
+      {status}
+      {error ? `(${error})` : ""}
+    </div>
+    <button on:click={runSimulation}>RUN</button>
   </div>
-  <p>Click on the Tauri, Vite, and SvelteKit logos to learn more.</p>
 
-  <form class="row" onsubmit={greet}>
-    <input id="greet-input" placeholder="Enter a name..." bind:value={name} />
-    <button type="submit">Greet</button>
-  </form>
-  <p>{greetMsg}</p>
+  <div class="workspace">
+    <div class="left-panel">
+      <Editor bind:code />
+    </div>
+    <div class="right-panel">
+      <RegisterView {registers} />
+      <!-- We treat "Input" as the args passed, and "Output" as the return value -->
+      <IOView {input} {output} {expected} />
+    </div>
+  </div>
 </main>
 
 <style>
-.logo.vite:hover {
-  filter: drop-shadow(0 0 2em #747bff);
-}
-
-.logo.svelte-kit:hover {
-  filter: drop-shadow(0 0 2em #ff3e00);
-}
-
-:root {
-  font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
-  font-size: 16px;
-  line-height: 24px;
-  font-weight: 400;
-
-  color: #0f0f0f;
-  background-color: #f6f6f6;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  -webkit-text-size-adjust: 100%;
-}
-
-.container {
-  margin: 0;
-  padding-top: 10vh;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  text-align: center;
-}
-
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: 0.75s;
-}
-
-.logo.tauri:hover {
-  filter: drop-shadow(0 0 2em #24c8db);
-}
-
-.row {
-  display: flex;
-  justify-content: center;
-}
-
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-
-a:hover {
-  color: #535bf2;
-}
-
-h1 {
-  text-align: center;
-}
-
-input,
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  color: #0f0f0f;
-  background-color: #ffffff;
-  transition: border-color 0.25s;
-  box-shadow: 0 2px 2px rgba(0, 0, 0, 0.2);
-}
-
-button {
-  cursor: pointer;
-}
-
-button:hover {
-  border-color: #396cd8;
-}
-button:active {
-  border-color: #396cd8;
-  background-color: #e8e8e8;
-}
-
-input,
-button {
-  outline: none;
-}
-
-#greet-input {
-  margin-right: 5px;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    color: #f6f6f6;
-    background-color: #2f2f2f;
+  :global(body) {
+    margin: 0;
+    padding: 0;
+    background-color: #1e1e1e;
+    color: #fff;
+    font-family: "Inter", sans-serif;
   }
 
-  a:hover {
-    color: #24c8db;
+  .container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    padding: 1rem;
+    box-sizing: border-box;
   }
 
-  input,
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+
+  .title-group {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  h1 {
+    margin: 0;
+    font-size: 1.5rem;
+  }
+
+  .syntax-select {
+    background: #333;
+    color: white;
+    border: 1px solid #555;
+    padding: 0.25rem;
+    border-radius: 4px;
+  }
+
+  .status {
+    font-weight: bold;
+    color: #ccc;
+  }
+
+  .status.success {
+    color: #4caf50;
+  }
+
+  .status.error {
+    color: #f44336;
+  }
+
   button {
-    color: #ffffff;
-    background-color: #0f0f0f98;
+    background-color: #007acc;
+    color: white;
+    border: none;
+    padding: 0.5rem 1.5rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
   }
-  button:active {
-    background-color: #0f0f0f69;
-  }
-}
 
+  button:hover {
+    background-color: #0098ff;
+  }
+
+  .workspace {
+    display: flex;
+    flex: 1;
+    gap: 1rem;
+    min-height: 0;
+  }
+
+  .left-panel {
+    flex: 1;
+  }
+
+  .right-panel {
+    width: 350px;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
 </style>
