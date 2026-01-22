@@ -36,7 +36,8 @@ _start:
   // PROGRESSION SYSTEM
   let completedLevels: Set<string> = new Set();
 
-  onMount(() => {
+  onMount(async () => {
+    // Load completed levels from localStorage
     const stored = localStorage.getItem("opcode_completed_levels");
     if (stored) {
       try {
@@ -44,6 +45,11 @@ _start:
       } catch (e) {
         console.error(e);
       }
+    }
+    
+    // Ensure initial code is set for 01_Mov&Call
+    if (!currentLevel) {
+      applyDefaultCode("01_Mov&Call");
     }
   });
 
@@ -78,8 +84,8 @@ _start:
   }
 
   function applyDefaultCode(levelId: string) {
-    if (levelId === "01_Mov&Call") {
-      code = `section .bss
+    // すべてのステージで統一された初期コードを使用
+    code = `section .bss
     buf resb 16
 
 section .text
@@ -93,31 +99,6 @@ _start:
     mov rax, 60
     xor rdi, rdi
     syscall`;
-    } else if (levelId === "12_TheAccumulator") {
-      code = `section .text
-    global _start
-
-_start:
-    ; MISSION: The Accumulator
-    ; Read inputs using 'IN' until 0 is encountered.
-    ; Return the sum in RAX.
-    
-    ; exit(k)
-    mov rax, 60
-    mov rdi, 0 ; or result
-    syscall`;
-    } else {
-      code = `section .text
-    global _start
-
-_start:
-    ; Implement mission logic here
-    
-    ; exit(0)
-    mov rax, 60
-    xor rdi, rdi
-    syscall`;
-    }
   }
 
   function resetCode() {
