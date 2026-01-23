@@ -35,6 +35,15 @@ jobs:
           fi
 
       # ここでReleaseの下書きを作成しておく
+      - name: Delete existing release if exists
+        uses: softprops/action-gh-release@v2
+        continue-on-error: true
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          delete: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Create Release
         id: create_release
         uses: softprops/action-gh-release@v2
