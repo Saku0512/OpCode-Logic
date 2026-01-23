@@ -293,7 +293,7 @@ impl VM {
             }
             Operand::MemReg(r) => {
                 let addr = self.get_register(*r) as usize;
-                if addr + 1 <= self.memory.len() {
+                if addr < self.memory.len() {
                     // Supporting partial writes is complex, but for now let's do byte if it's a small value??
                     // Real x86_64 mov [buf], rax writes 8 bytes.
                     if addr + 8 <= self.memory.len() {
@@ -631,7 +631,7 @@ impl VM {
                 regs_after, self.zf, self.sf, self.output_queue
             ));
         } else {
-            self.log(format!("  EXECUTION STOPPED due to error"));
+            self.log("  EXECUTION STOPPED due to error".to_string());
         }
 
         true
@@ -671,7 +671,7 @@ pub fn parse_operand(s: &str) -> Result<Operand, String> {
             let imm_s = s.strip_prefix('$').unwrap_or(s);
             if let Ok(val) = imm_s.parse::<i64>() {
                 Ok(Operand::Imm(val))
-            } else if !s.is_empty() && s.chars().next().map_or(false, |c| !c.is_numeric()) {
+            } else if !s.is_empty() && s.chars().next().is_some_and(|c| !c.is_numeric()) {
                 Ok(Operand::Label(s.to_string()))
             } else {
                 Err(format!("Unknown operand: {}", s))
@@ -680,17 +680,19 @@ pub fn parse_operand(s: &str) -> Result<Operand, String> {
     }
 }
 
-pub fn parse_program(
-    code: &str,
-    syntax: Syntax,
-) -> Result<
+type ParseResult = Result<
     (
         Vec<Instruction>,
         HashMap<String, usize>,
         HashMap<String, usize>,
     ),
     String,
-> {
+>;
+
+pub fn parse_program(
+    code: &str,
+    syntax: Syntax,
+) -> ParseResult {
     let mut instructions = Vec::new();
     let mut labels = HashMap::new();
     let mut data_labels = HashMap::new();
@@ -714,8 +716,8 @@ pub fn parse_program(
         let first_part = parts[0];
 
         // Label detection (with or without colon)
-        if first_part.ends_with(':') {
-            let label_name = first_part[..first_part.len() - 1].to_string();
+        if let Some(stripped) = first_part.strip_suffix(':') {
+            let label_name = stripped.to_string();
             if current_section == ".text" {
                 labels.insert(label_name, pc_counter);
             } else {
@@ -749,11 +751,9 @@ pub fn parse_program(
         }
 
         if current_section == ".bss" {
-            if op_raw == "resb" {
-                if parts.len() > op_idx + 1 {
-                    if let Ok(size) = parts[op_idx + 1].parse::<usize>() {
-                        current_bss_offset += size;
-                    }
+            if op_raw == "resb" && parts.len() > op_idx + 1 {
+                if let Ok(size) = parts[op_idx + 1].parse::<usize>() {
+                    current_bss_offset += size;
                 }
             }
             continue;
