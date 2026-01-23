@@ -42,9 +42,21 @@
         selectedLevelId = level.id;
         onSelect(level);
     }
+
+    function goToReference() {
+        window.location.hash = '#/reference';
+        // For SPA mode with SvelteKit, we might need to use navigation
+        window.location.pathname = '/reference';
+    }
 </script>
 
 <div class="level-selector">
+    <div class="sidebar-header">
+        <a href="/reference" class="reference-btn" title="x86_64 Reference">
+            <span class="ref-icon">📚</span>
+            <span class="ref-text">Reference</span>
+        </a>
+    </div>
     <div class="stage-title">GRAND STAGE 1</div>
     {#if loading}
         <div class="loading">Initializing...</div>
@@ -96,6 +108,44 @@
         display: flex;
         flex-direction: column;
         background: transparent;
+    }
+
+    .sidebar-header {
+        padding: 1rem 0.75rem 0.5rem;
+    }
+
+    .reference-btn {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        width: 100%;
+        padding: 0.75rem 0.75rem;
+        margin-bottom: 0.25rem;
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(99, 102, 241, 0.1) 100%);
+        border: 1px solid rgba(99, 102, 241, 0.3);
+        border-radius: 8px;
+        color: #93c5fd;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-align: left;
+        box-sizing: border-box;
+    }
+
+    .reference-btn:hover {
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.3) 0%, rgba(99, 102, 241, 0.2) 100%);
+        border-color: rgba(99, 102, 241, 0.5);
+        color: #bfdbfe;
+    }
+
+    .ref-icon {
+        font-size: 1rem;
+    }
+
+    .ref-text {
+        font-family: "Inter", sans-serif;
     }
 
     .stage-title {
