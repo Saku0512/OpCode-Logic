@@ -1,10 +1,24 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, VecDeque};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum Register {
-    RAX, RBX, RCX, RDX, RSI, RDI, RSP, RBP,
-    R8, R9, R10, R11, R12, R13, R14, R15,
+    RAX,
+    RBX,
+    RCX,
+    RDX,
+    RSI,
+    RDI,
+    RSP,
+    RBP,
+    R8,
+    R9,
+    R10,
+    R11,
+    R12,
+    R13,
+    R14,
+    R15,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -12,8 +26,8 @@ pub enum Operand {
     Reg(Register),
     Imm(i64),
     Label(String),
-    MemReg(Register),     // [RAX]
-    MemLabel(String),    // [buf]
+    MemReg(Register), // [RAX]
+    MemLabel(String), // [buf]
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -78,17 +92,34 @@ pub struct VM {
 const MEMORY_SIZE: usize = 65536; // 64KB
 
 impl VM {
-    pub fn new(program: Vec<Instruction>, labels: HashMap<String, usize>, data_labels: HashMap<String, usize>, input: Vec<i64>) -> Self {
+    pub fn new(
+        program: Vec<Instruction>,
+        labels: HashMap<String, usize>,
+        data_labels: HashMap<String, usize>,
+        input: Vec<i64>,
+    ) -> Self {
         let mut registers = HashMap::new();
         for r in [
-            Register::RAX, Register::RBX, Register::RCX, Register::RDX,
-            Register::RSI, Register::RDI, Register::RSP, Register::RBP,
-            Register::R8,  Register::R9,  Register::R10, Register::R11,
-            Register::R12, Register::R13, Register::R14, Register::R15
+            Register::RAX,
+            Register::RBX,
+            Register::RCX,
+            Register::RDX,
+            Register::RSI,
+            Register::RDI,
+            Register::RSP,
+            Register::RBP,
+            Register::R8,
+            Register::R9,
+            Register::R10,
+            Register::R11,
+            Register::R12,
+            Register::R13,
+            Register::R14,
+            Register::R15,
         ] {
             registers.insert(r, 0);
         }
-        
+
         VM {
             registers,
             zf: false,
@@ -152,14 +183,38 @@ impl VM {
 
     fn format_instruction(&self, inst: &Instruction) -> String {
         match inst {
-            Instruction::MOV(dest, src) => format!("MOV {}, {}", self.format_operand(dest), self.format_operand(src)),
-            Instruction::ADD(dest, src) => format!("ADD {}, {}", self.format_operand(dest), self.format_operand(src)),
-            Instruction::SUB(dest, src) => format!("SUB {}, {}", self.format_operand(dest), self.format_operand(src)),
+            Instruction::MOV(dest, src) => format!(
+                "MOV {}, {}",
+                self.format_operand(dest),
+                self.format_operand(src)
+            ),
+            Instruction::ADD(dest, src) => format!(
+                "ADD {}, {}",
+                self.format_operand(dest),
+                self.format_operand(src)
+            ),
+            Instruction::SUB(dest, src) => format!(
+                "SUB {}, {}",
+                self.format_operand(dest),
+                self.format_operand(src)
+            ),
             Instruction::INC(op) => format!("INC {}", self.format_operand(op)),
             Instruction::DEC(op) => format!("DEC {}", self.format_operand(op)),
-            Instruction::XOR(dest, src) => format!("XOR {}, {}", self.format_operand(dest), self.format_operand(src)),
-            Instruction::CMP(op1, op2) => format!("CMP {}, {}", self.format_operand(op1), self.format_operand(op2)),
-            Instruction::TEST(op1, op2) => format!("TEST {}, {}", self.format_operand(op1), self.format_operand(op2)),
+            Instruction::XOR(dest, src) => format!(
+                "XOR {}, {}",
+                self.format_operand(dest),
+                self.format_operand(src)
+            ),
+            Instruction::CMP(op1, op2) => format!(
+                "CMP {}, {}",
+                self.format_operand(op1),
+                self.format_operand(op2)
+            ),
+            Instruction::TEST(op1, op2) => format!(
+                "TEST {}, {}",
+                self.format_operand(op1),
+                self.format_operand(op2)
+            ),
             Instruction::JMP(label) => format!("JMP {}", label),
             Instruction::JZ(label) => format!("JZ {}", label),
             Instruction::JNZ(label) => format!("JNZ {}", label),
@@ -205,20 +260,20 @@ impl VM {
                 } else {
                     Err(format!("Symbol not found: {}", l))
                 }
-            },
+            }
             Operand::MemReg(r) => {
                 let addr = self.get_register(*r) as usize;
                 if addr + 8 <= self.memory.len() {
-                    let bytes = &self.memory[addr..addr+8];
+                    let bytes = &self.memory[addr..addr + 8];
                     Ok(i64::from_le_bytes(bytes.try_into().unwrap()))
                 } else {
                     Err(format!("Segmentation fault at address 0x{:x}", addr))
                 }
-            },
+            }
             Operand::MemLabel(l) => {
                 if let Some(&addr) = self.data_labels.get(l) {
                     if addr + 8 <= self.memory.len() {
-                        let bytes = &self.memory[addr..addr+8];
+                        let bytes = &self.memory[addr..addr + 8];
                         Ok(i64::from_le_bytes(bytes.try_into().unwrap()))
                     } else {
                         Err(format!("Segmentation fault at symbol {}", l))
@@ -235,7 +290,7 @@ impl VM {
             Operand::Reg(r) => {
                 self.registers.insert(*r, val);
                 Ok(())
-            },
+            }
             Operand::MemReg(r) => {
                 let addr = self.get_register(*r) as usize;
                 if addr + 1 <= self.memory.len() {
@@ -243,7 +298,7 @@ impl VM {
                     // Real x86_64 mov [buf], rax writes 8 bytes.
                     if addr + 8 <= self.memory.len() {
                         let bytes = val.to_le_bytes();
-                        self.memory[addr..addr+8].copy_from_slice(&bytes);
+                        self.memory[addr..addr + 8].copy_from_slice(&bytes);
                         Ok(())
                     } else {
                         self.memory[addr] = (val & 0xFF) as u8;
@@ -252,12 +307,12 @@ impl VM {
                 } else {
                     Err(format!("Segmentation fault (store) at 0x{:x}", addr))
                 }
-            },
+            }
             Operand::MemLabel(l) => {
                 if let Some(&addr) = self.data_labels.get(l) {
                     if addr + 8 <= self.memory.len() {
                         let bytes = val.to_le_bytes();
-                        self.memory[addr..addr+8].copy_from_slice(&bytes);
+                        self.memory[addr..addr + 8].copy_from_slice(&bytes);
                         Ok(())
                     } else {
                         self.memory[addr] = (val & 0xFF) as u8;
@@ -266,7 +321,7 @@ impl VM {
                 } else {
                     Err(format!("Symbol not found: {}", l))
                 }
-            },
+            }
             _ => Err("Invalid destination for store".to_string()),
         }
     }
@@ -283,29 +338,34 @@ impl VM {
 
         let inst = self.program[self.pc].clone();
         let mut next_pc = self.pc + 1;
-        
+
         // 実行前の状態をログ
         let inst_str = self.format_instruction(&inst);
         let regs_before = self.log_registers();
-        self.log(format!("[Step {}] PC={} | {} | Before: {} | ZF={} SF={}", 
-            self.execution_log.len() + 1, self.pc, inst_str, regs_before, self.zf, self.sf));
+        self.log(format!(
+            "[Step {}] PC={} | {} | Before: {} | ZF={} SF={}",
+            self.execution_log.len() + 1,
+            self.pc,
+            inst_str,
+            regs_before,
+            self.zf,
+            self.sf
+        ));
 
         match inst {
-            Instruction::MOV(dest, src) => {
-                match self.get_value(&src) {
-                    Ok(val) => {
-                        if let Err(e) = self.set_value(&dest, val) {
-                            self.error = Some(e.clone());
-                            self.log(format!("  ERROR: {}", e));
-                        } else {
-                            let dest_str = self.format_operand(&dest);
-                            self.log(format!("  -> {} = {}", dest_str, val));
-                        }
-                    },
-                    Err(e) => { 
+            Instruction::MOV(dest, src) => match self.get_value(&src) {
+                Ok(val) => {
+                    if let Err(e) = self.set_value(&dest, val) {
                         self.error = Some(e.clone());
                         self.log(format!("  ERROR: {}", e));
+                    } else {
+                        let dest_str = self.format_operand(&dest);
+                        self.log(format!("  -> {} = {}", dest_str, val));
                     }
+                }
+                Err(e) => {
+                    self.error = Some(e.clone());
+                    self.log(format!("  ERROR: {}", e));
                 }
             },
             Instruction::ADD(dest, src) => {
@@ -315,11 +375,11 @@ impl VM {
                     self.update_flags(res);
                     let dest_str = self.format_operand(&dest);
                     self.log(format!("  -> {} = {} + {} = {}", dest_str, v1, v2, res));
-                } else { 
+                } else {
                     self.error = Some("Invalid operands for ADD".to_string());
                     self.log("  ERROR: Invalid operands for ADD".to_string());
                 }
-            },
+            }
             Instruction::SUB(dest, src) => {
                 if let (Ok(v1), Ok(v2)) = (self.get_value(&dest), self.get_value(&src)) {
                     let res = v1.wrapping_sub(v2);
@@ -327,56 +387,70 @@ impl VM {
                     self.update_flags(res);
                     let dest_str = self.format_operand(&dest);
                     self.log(format!("  -> {} = {} - {} = {}", dest_str, v1, v2, res));
-                } else { 
+                } else {
                     self.error = Some("Invalid operands for SUB".to_string());
                     self.log("  ERROR: Invalid operands for SUB".to_string());
                 }
-            },
+            }
             Instruction::INC(op) => {
                 if let Ok(val) = self.get_value(&op) {
                     let res = val.wrapping_add(1);
                     let _ = self.set_value(&op, res);
                     self.update_flags(res);
-                } else { self.error = Some("Invalid operand for INC".to_string()); }
-            },
+                } else {
+                    self.error = Some("Invalid operand for INC".to_string());
+                }
+            }
             Instruction::DEC(op) => {
                 if let Ok(val) = self.get_value(&op) {
                     let res = val.wrapping_sub(1);
                     let _ = self.set_value(&op, res);
                     self.update_flags(res);
-                } else { self.error = Some("Invalid operand for DEC".to_string()); }
-            },
+                } else {
+                    self.error = Some("Invalid operand for DEC".to_string());
+                }
+            }
             Instruction::XOR(dest, src) => {
                 if let (Ok(v1), Ok(v2)) = (self.get_value(&dest), self.get_value(&src)) {
                     let res = v1 ^ v2;
                     let _ = self.set_value(&dest, res);
                     self.update_flags(res);
-                } else { self.error = Some("Invalid operands for XOR".to_string()); }
-            },
+                } else {
+                    self.error = Some("Invalid operands for XOR".to_string());
+                }
+            }
             Instruction::CMP(op1, op2) => {
                 if let (Ok(v1), Ok(v2)) = (self.get_value(&op1), self.get_value(&op2)) {
                     let res = v1.wrapping_sub(v2);
                     self.update_flags(res);
-                } else { self.error = Some("Invalid operands for CMP".to_string()); }
-            },
+                } else {
+                    self.error = Some("Invalid operands for CMP".to_string());
+                }
+            }
             Instruction::TEST(op1, op2) => {
                 if let (Ok(v1), Ok(v2)) = (self.get_value(&op1), self.get_value(&op2)) {
                     let res = v1 & v2;
                     self.update_flags(res);
-                } else { self.error = Some("Invalid operands for TEST".to_string()); }
-            },
+                } else {
+                    self.error = Some("Invalid operands for TEST".to_string());
+                }
+            }
             Instruction::PUSH(op) => {
                 if let Ok(val) = self.get_value(&op) {
                     self.stack.push(val);
-                } else { self.error = Some("Invalid source for PUSH".to_string()); }
-            },
+                } else {
+                    self.error = Some("Invalid source for PUSH".to_string());
+                }
+            }
             Instruction::POP(op) => {
                 if let Some(val) = self.stack.pop() {
                     if let Err(e) = self.set_value(&op, val) {
                         self.error = Some(e);
                     }
-                } else { self.error = Some("Stack underflow".to_string()); }
-            },
+                } else {
+                    self.error = Some("Stack underflow".to_string());
+                }
+            }
             Instruction::IN(op) => {
                 if let Some(val) = self.input_queue.pop_front() {
                     if let Err(e) = self.set_value(&op, val) {
@@ -384,30 +458,43 @@ impl VM {
                         self.log(format!("  ERROR: {}", e));
                     } else {
                         let op_str = self.format_operand(&op);
-                        self.log(format!("  -> {} = INPUT: {} (remaining: {})", op_str, val, self.input_queue.len()));
+                        self.log(format!(
+                            "  -> {} = INPUT: {} (remaining: {})",
+                            op_str,
+                            val,
+                            self.input_queue.len()
+                        ));
                     }
-                } else { 
+                } else {
                     self.error = Some("Input buffer empty".to_string());
                     self.log("  ERROR: Input buffer empty".to_string());
                 }
-            },
+            }
             Instruction::OUT(op) => {
                 if let Ok(val) = self.get_value(&op) {
                     self.output_queue.push(val);
-                    self.log(format!("  -> OUTPUT: {} (total outputs: {})", val, self.output_queue.len()));
-                } else { 
+                    self.log(format!(
+                        "  -> OUTPUT: {} (total outputs: {})",
+                        val,
+                        self.output_queue.len()
+                    ));
+                } else {
                     self.error = Some("Invalid source for OUT".to_string());
                     self.log("  ERROR: Invalid source for OUT".to_string());
                 }
-            },
+            }
             Instruction::SYSCALL => {
                 let rax = self.get_register(Register::RAX);
                 match rax {
-                    0 => { // sys_read
+                    0 => {
+                        // sys_read
                         let count = self.get_register(Register::RDX) as usize;
                         let addr = self.get_register(Register::RSI) as usize;
                         let mut read_bytes = 0;
-                        self.log(format!("  -> SYSCALL READ: count={}, addr=0x{:x}", count, addr));
+                        self.log(format!(
+                            "  -> SYSCALL READ: count={}, addr=0x{:x}",
+                            count, addr
+                        ));
                         for i in 0..count {
                             if let Some(val) = self.input_queue.pop_front() {
                                 if addr + i < self.memory.len() {
@@ -417,16 +504,22 @@ impl VM {
                                         i, val, addr + i, byte_val as i8 as i64, byte_val));
                                     read_bytes += 1;
                                 }
-                            } else { break; }
+                            } else {
+                                break;
+                            }
                         }
                         self.registers.insert(Register::RAX, read_bytes as i64);
                         self.log(format!("  -> READ complete: {} bytes read", read_bytes));
-                    },
-                    1 => { // sys_write
+                    }
+                    1 => {
+                        // sys_write
                         let count = self.get_register(Register::RDX) as usize;
                         let addr = self.get_register(Register::RSI) as usize;
                         let mut written_bytes = 0;
-                        self.log(format!("  -> SYSCALL WRITE: count={}, addr=0x{:x}", count, addr));
+                        self.log(format!(
+                            "  -> SYSCALL WRITE: count={}, addr=0x{:x}",
+                            count, addr
+                        ));
                         for i in 0..count {
                             if addr + i < self.memory.len() {
                                 // 符号拡張: u8 を i64 に変換する際、最上位ビットが1なら符号拡張
@@ -437,82 +530,106 @@ impl VM {
                                 } else {
                                     byte_val as i64
                                 };
-                                self.log(format!("    Write byte[{}]: memory[0x{:x}]=0x{:02x} -> output={}", 
-                                    i, addr + i, byte_val, val));
+                                self.log(format!(
+                                    "    Write byte[{}]: memory[0x{:x}]=0x{:02x} -> output={}",
+                                    i,
+                                    addr + i,
+                                    byte_val,
+                                    val
+                                ));
                                 self.output_queue.push(val);
                                 written_bytes += 1;
-                            } else { break; }
+                            } else {
+                                break;
+                            }
                         }
                         self.registers.insert(Register::RAX, written_bytes as i64);
-                        self.log(format!("  -> WRITE complete: {} bytes written, output queue: {:?}", 
-                            written_bytes, self.output_queue));
-                    },
-                    60 => { // sys_exit
+                        self.log(format!(
+                            "  -> WRITE complete: {} bytes written, output queue: {:?}",
+                            written_bytes, self.output_queue
+                        ));
+                    }
+                    60 => {
+                        // sys_exit
                         self.finished = true;
-                    },
-                    _ => { self.error = Some(format!("Unknown syscall: {}", rax)); }
+                    }
+                    _ => {
+                        self.error = Some(format!("Unknown syscall: {}", rax));
+                    }
                 }
-            },
+            }
             Instruction::JMP(label) => {
-                if let Some(&addr) = self.labels.get(&label) { 
+                if let Some(&addr) = self.labels.get(&label) {
                     next_pc = addr;
-                    self.log(format!("  -> JUMP to {} (PC: {} -> {})", label, self.pc, addr));
-                }
-                else { 
+                    self.log(format!(
+                        "  -> JUMP to {} (PC: {} -> {})",
+                        label, self.pc, addr
+                    ));
+                } else {
                     self.error = Some(format!("Label not found: {}", label));
                     self.log(format!("  ERROR: Label not found: {}", label));
                 }
-            },
+            }
             Instruction::JZ(label) => {
                 if self.zf {
-                    if let Some(&addr) = self.labels.get(&label) { 
+                    if let Some(&addr) = self.labels.get(&label) {
                         next_pc = addr;
-                        self.log(format!("  -> JZ taken: jump to {} (PC: {} -> {})", label, self.pc, addr));
-                    }
-                    else { 
+                        self.log(format!(
+                            "  -> JZ taken: jump to {} (PC: {} -> {})",
+                            label, self.pc, addr
+                        ));
+                    } else {
                         self.error = Some(format!("Label not found: {}", label));
                         self.log(format!("  ERROR: Label not found: {}", label));
                     }
                 } else {
                     self.log(format!("  -> JZ not taken (ZF={})", self.zf));
                 }
-            },
+            }
             Instruction::JNZ(label) => {
                 if !self.zf {
-                    if let Some(&addr) = self.labels.get(&label) { 
+                    if let Some(&addr) = self.labels.get(&label) {
                         next_pc = addr;
-                        self.log(format!("  -> JNZ taken: jump to {} (PC: {} -> {})", label, self.pc, addr));
-                    }
-                    else { 
+                        self.log(format!(
+                            "  -> JNZ taken: jump to {} (PC: {} -> {})",
+                            label, self.pc, addr
+                        ));
+                    } else {
                         self.error = Some(format!("Label not found: {}", label));
                         self.log(format!("  ERROR: Label not found: {}", label));
                     }
                 } else {
                     self.log(format!("  -> JNZ not taken (ZF={})", self.zf));
                 }
-            },
+            }
             Instruction::JS(label) => {
                 if self.sf {
-                    if let Some(&addr) = self.labels.get(&label) { 
+                    if let Some(&addr) = self.labels.get(&label) {
                         next_pc = addr;
-                        self.log(format!("  -> JS taken: jump to {} (PC: {} -> {})", label, self.pc, addr));
-                    }
-                    else { 
+                        self.log(format!(
+                            "  -> JS taken: jump to {} (PC: {} -> {})",
+                            label, self.pc, addr
+                        ));
+                    } else {
                         self.error = Some(format!("Label not found: {}", label));
                         self.log(format!("  ERROR: Label not found: {}", label));
                     }
                 } else {
                     self.log(format!("  -> JS not taken (SF={})", self.sf));
                 }
-            },
-            Instruction::RET => { self.finished = true; }
+            }
+            Instruction::RET => {
+                self.finished = true;
+            }
         }
 
         if self.error.is_none() {
             self.pc = next_pc;
             let regs_after = self.log_registers();
-            self.log(format!("  After: {} | ZF={} SF={} | Output: {:?}", 
-                regs_after, self.zf, self.sf, self.output_queue));
+            self.log(format!(
+                "  After: {} | ZF={} SF={} | Output: {:?}",
+                regs_after, self.zf, self.sf, self.output_queue
+            ));
         } else {
             self.log(format!("  EXECUTION STOPPED due to error"));
         }
@@ -524,7 +641,7 @@ impl VM {
 pub fn parse_operand(s: &str) -> Result<Operand, String> {
     let s = s.trim();
     if s.starts_with('[') && s.ends_with(']') {
-        let content = &s[1..s.len()-1].trim();
+        let content = &s[1..s.len() - 1].trim();
         if let Ok(Operand::Reg(r)) = parse_operand(content) {
             return Ok(Operand::MemReg(r));
         } else {
@@ -563,41 +680,63 @@ pub fn parse_operand(s: &str) -> Result<Operand, String> {
     }
 }
 
-pub fn parse_program(code: &str, syntax: Syntax) -> Result<(Vec<Instruction>, HashMap<String, usize>, HashMap<String, usize>), String> {
+pub fn parse_program(
+    code: &str,
+    syntax: Syntax,
+) -> Result<
+    (
+        Vec<Instruction>,
+        HashMap<String, usize>,
+        HashMap<String, usize>,
+    ),
+    String,
+> {
     let mut instructions = Vec::new();
     let mut labels = HashMap::new();
     let mut data_labels = HashMap::new();
     let mut current_bss_offset = 0;
-    
+
     let mut pc_counter = 0;
     let mut current_section = ".text".to_string();
 
     for line in code.lines() {
         let line = line.split(&[';', '#'][..]).next().unwrap_or("").trim();
-        if line.is_empty() { continue; }
-        
+        if line.is_empty() {
+            continue;
+        }
+
         let parts: Vec<&str> = line.split_whitespace().collect();
-        if parts.is_empty() { continue; }
-        
+        if parts.is_empty() {
+            continue;
+        }
+
         let mut op_idx = 0;
         let first_part = parts[0];
-        
+
         // Label detection (with or without colon)
         if first_part.ends_with(':') {
-            let label_name = first_part[..first_part.len()-1].to_string();
-            if current_section == ".text" { labels.insert(label_name, pc_counter); }
-            else { data_labels.insert(label_name, current_bss_offset); }
+            let label_name = first_part[..first_part.len() - 1].to_string();
+            if current_section == ".text" {
+                labels.insert(label_name, pc_counter);
+            } else {
+                data_labels.insert(label_name, current_bss_offset);
+            }
             op_idx = 1;
-        } else if (current_section == ".bss" || current_section == "section .bss") && parts.len() > 1 && parts[1].to_lowercase() == "resb" {
+        } else if (current_section == ".bss" || current_section == "section .bss")
+            && parts.len() > 1
+            && parts[1].to_lowercase() == "resb"
+        {
             // "buf resb 16"
             let label_name = first_part.to_string();
             data_labels.insert(label_name, current_bss_offset);
             op_idx = 1;
         }
 
-        if op_idx >= parts.len() { continue; }
+        if op_idx >= parts.len() {
+            continue;
+        }
         let op_raw = parts[op_idx].to_lowercase();
-        
+
         if op_raw == "section" {
             if parts.len() > op_idx + 1 {
                 current_section = parts[op_idx + 1].to_string();
@@ -622,41 +761,75 @@ pub fn parse_program(code: &str, syntax: Syntax) -> Result<(Vec<Instruction>, Ha
 
         // TEXT SECTION Parsing
         let args_str = parts[1..].join(" ");
-        let args: Vec<&str> = if args_str.is_empty() { Vec::new() } else { args_str.split(',').collect() };
+        let args: Vec<&str> = if args_str.is_empty() {
+            Vec::new()
+        } else {
+            args_str.split(',').collect()
+        };
 
         let inst = match op_raw.as_str() {
             "mov" | "movq" => {
-                if args.len() != 2 { return Err(format!("{} requires 2 operands", op_raw)); }
+                if args.len() != 2 {
+                    return Err(format!("{} requires 2 operands", op_raw));
+                }
                 let (op1, op2) = (parse_operand(args[0])?, parse_operand(args[1])?);
-                match syntax { Syntax::Intel => Instruction::MOV(op1, op2), Syntax::Att => Instruction::MOV(op2, op1) }
-            },
+                match syntax {
+                    Syntax::Intel => Instruction::MOV(op1, op2),
+                    Syntax::Att => Instruction::MOV(op2, op1),
+                }
+            }
             "add" | "addq" => {
-                if args.len() != 2 { return Err(format!("{} requires 2 operands", op_raw)); }
+                if args.len() != 2 {
+                    return Err(format!("{} requires 2 operands", op_raw));
+                }
                 let (op1, op2) = (parse_operand(args[0])?, parse_operand(args[1])?);
-                match syntax { Syntax::Intel => Instruction::ADD(op1, op2), Syntax::Att => Instruction::ADD(op2, op1) }
-            },
+                match syntax {
+                    Syntax::Intel => Instruction::ADD(op1, op2),
+                    Syntax::Att => Instruction::ADD(op2, op1),
+                }
+            }
             "sub" | "subq" => {
-                if args.len() != 2 { return Err(format!("{} requires 2 operands", op_raw)); }
+                if args.len() != 2 {
+                    return Err(format!("{} requires 2 operands", op_raw));
+                }
                 let (op1, op2) = (parse_operand(args[0])?, parse_operand(args[1])?);
-                match syntax { Syntax::Intel => Instruction::SUB(op1, op2), Syntax::Att => Instruction::SUB(op2, op1) }
-            },
+                match syntax {
+                    Syntax::Intel => Instruction::SUB(op1, op2),
+                    Syntax::Att => Instruction::SUB(op2, op1),
+                }
+            }
             "inc" | "incq" => Instruction::INC(parse_operand(args[0])?),
             "dec" | "decq" => Instruction::DEC(parse_operand(args[0])?),
             "xor" | "xorq" => {
-                if args.len() != 2 { return Err(format!("{} requires 2 operands", op_raw)); }
+                if args.len() != 2 {
+                    return Err(format!("{} requires 2 operands", op_raw));
+                }
                 let (op1, op2) = (parse_operand(args[0])?, parse_operand(args[1])?);
-                match syntax { Syntax::Intel => Instruction::XOR(op1, op2), Syntax::Att => Instruction::XOR(op2, op1) }
-            },
+                match syntax {
+                    Syntax::Intel => Instruction::XOR(op1, op2),
+                    Syntax::Att => Instruction::XOR(op2, op1),
+                }
+            }
             "cmp" | "cmpq" => {
-                if args.len() != 2 { return Err(format!("{} requires 2 operands", op_raw)); }
+                if args.len() != 2 {
+                    return Err(format!("{} requires 2 operands", op_raw));
+                }
                 let (op1, op2) = (parse_operand(args[0])?, parse_operand(args[1])?);
-                match syntax { Syntax::Intel => Instruction::CMP(op1, op2), Syntax::Att => Instruction::CMP(op2, op1) }
-            },
+                match syntax {
+                    Syntax::Intel => Instruction::CMP(op1, op2),
+                    Syntax::Att => Instruction::CMP(op2, op1),
+                }
+            }
             "test" | "testq" => {
-                if args.len() != 2 { return Err(format!("{} requires 2 operands", op_raw)); }
+                if args.len() != 2 {
+                    return Err(format!("{} requires 2 operands", op_raw));
+                }
                 let (op1, op2) = (parse_operand(args[0])?, parse_operand(args[1])?);
-                match syntax { Syntax::Intel => Instruction::TEST(op1, op2), Syntax::Att => Instruction::TEST(op2, op1) }
-            },
+                match syntax {
+                    Syntax::Intel => Instruction::TEST(op1, op2),
+                    Syntax::Att => Instruction::TEST(op2, op1),
+                }
+            }
             "push" | "pushq" => Instruction::PUSH(parse_operand(args[0])?),
             "pop" | "popq" => Instruction::POP(parse_operand(args[0])?),
             "in" => Instruction::IN(parse_operand(args[0])?),
@@ -667,7 +840,7 @@ pub fn parse_program(code: &str, syntax: Syntax) -> Result<(Vec<Instruction>, Ha
             "jnz" | "jne" => Instruction::JNZ(parts[1].trim().to_string()),
             "js" => Instruction::JS(parts[1].trim().to_string()),
             "ret" | "retq" => Instruction::RET,
-            _ => return Err(format!("Unknown instruction: {}", op_raw))
+            _ => return Err(format!("Unknown instruction: {}", op_raw)),
         };
         instructions.push(inst);
         pc_counter += 1;
@@ -1029,9 +1202,18 @@ mod tests {
 
     #[test]
     fn test_parse_operand_register() {
-        assert!(matches!(parse_operand("rax").unwrap(), Operand::Reg(Register::RAX)));
-        assert!(matches!(parse_operand("RAX").unwrap(), Operand::Reg(Register::RAX)));
-        assert!(matches!(parse_operand("%rax").unwrap(), Operand::Reg(Register::RAX)));
+        assert!(matches!(
+            parse_operand("rax").unwrap(),
+            Operand::Reg(Register::RAX)
+        ));
+        assert!(matches!(
+            parse_operand("RAX").unwrap(),
+            Operand::Reg(Register::RAX)
+        ));
+        assert!(matches!(
+            parse_operand("%rax").unwrap(),
+            Operand::Reg(Register::RAX)
+        ));
     }
 
     #[test]
@@ -1043,8 +1225,14 @@ mod tests {
 
     #[test]
     fn test_parse_operand_memory() {
-        assert!(matches!(parse_operand("[rax]").unwrap(), Operand::MemReg(Register::RAX)));
-        assert!(matches!(parse_operand("[buf]").unwrap(), Operand::MemLabel(_)));
+        assert!(matches!(
+            parse_operand("[rax]").unwrap(),
+            Operand::MemReg(Register::RAX)
+        ));
+        assert!(matches!(
+            parse_operand("[buf]").unwrap(),
+            Operand::MemLabel(_)
+        ));
     }
 
     #[test]
