@@ -3,18 +3,41 @@
   import SyscallReference from "$lib/components/SyscallReference.svelte";
 
   let activeTab: "registers" | "syscalls" = "registers";
+  let language: "en" | "ja" = "en";
 </script>
 
 <main class="reference-container">
   <div class="nav-bar">
-    <a href="/" class="back-btn">
-      <span class="back-icon">←</span> Back to Levels
-    </a>
+    <div class="nav-left">
+      <a href="/" class="back-btn">
+        <span class="back-icon">←</span> Back to Levels
+      </a>
+    </div>
+    <div class="nav-right">
+      <button
+        class="lang-btn"
+        class:active={language === "en"}
+        on:click={() => (language = "en")}
+      >
+        EN
+      </button>
+      <button
+        class="lang-btn"
+        class:active={language === "ja"}
+        on:click={() => (language = "ja")}
+      >
+        日本語
+      </button>
+    </div>
   </div>
 
   <div class="reference-header glass">
-    <h1>x86_64 REFERENCE</h1>
-    <p class="subtitle">Assembly Language Architecture Guide</p>
+    <h1>{language === "en" ? "x86_64 REFERENCE" : "x86_64 リファレンス"}</h1>
+    <p class="subtitle">
+      {language === "en"
+        ? "Assembly Language Architecture Guide"
+        : "アセンブリ言語アーキテクチャガイド"}
+    </p>
   </div>
 
   <div class="tabs">
@@ -23,22 +46,22 @@
       class:active={activeTab === "registers"}
       on:click={() => (activeTab = "registers")}
     >
-      <span class="tab-icon">📋</span> REGISTERS
+      <span class="tab-icon">📋</span> {language === "en" ? "REGISTERS" : "レジスタ"}
     </button>
     <button
       class="tab-btn"
       class:active={activeTab === "syscalls"}
       on:click={() => (activeTab = "syscalls")}
     >
-      <span class="tab-icon">🔌</span> SYSCALLS
+      <span class="tab-icon">🔌</span> {language === "en" ? "SYSCALLS" : "システムコール"}
     </button>
   </div>
 
   <div class="content glass">
     {#if activeTab === "registers"}
-      <RegisterReference />
+      <RegisterReference {language} />
     {:else if activeTab === "syscalls"}
-      <SyscallReference />
+      <SyscallReference {language} />
     {/if}
   </div>
 </main>
@@ -72,6 +95,18 @@
 
   .nav-bar {
     margin-bottom: 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .nav-left {
+    flex: 1;
+  }
+
+  .nav-right {
+    display: flex;
+    gap: 0.5rem;
   }
 
   .back-btn {
@@ -97,6 +132,31 @@
 
   .back-icon {
     font-size: 1.2rem;
+  }
+
+  .lang-btn {
+    padding: 0.5rem 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    color: #94a3b8;
+    font-weight: 600;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .lang-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: #e2e8f0;
+  }
+
+  .lang-btn.active {
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    border-color: #3b82f6;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
   }
 
   .glass {
