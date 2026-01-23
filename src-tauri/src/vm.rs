@@ -69,6 +69,7 @@ pub struct VmState {
     pub memory: Vec<u8>, // Visualization of memory might be too large, but necessary for state
     pub input_remaining: usize,
     pub finished: bool,
+    pub exited: bool, // sys_exit で終了したかどうか
     pub error: Option<String>,
 }
 
@@ -86,6 +87,7 @@ pub struct VM {
     output_queue: Vec<i64>,
     error: Option<String>,
     finished: bool,
+    exited: bool,               // sys_exit で終了したかどうか
     execution_log: Vec<String>, // 実行ログを保存
 }
 
@@ -134,6 +136,7 @@ impl VM {
             output_queue: Vec::new(),
             error: None,
             finished: false,
+            exited: false,
             execution_log: Vec::new(),
         }
     }
@@ -157,6 +160,7 @@ impl VM {
             memory: self.memory[0..512].to_vec(), // Only return first 512 bytes for UI performance
             input_remaining: self.input_queue.len(),
             finished: self.finished || self.pc >= self.program.len() || self.error.is_some(),
+            exited: self.exited,
             error: self.error.clone(),
         }
     }
@@ -552,6 +556,7 @@ impl VM {
                     60 => {
                         // sys_exit
                         self.finished = true;
+                        self.exited = true;
                     }
                     _ => {
                         self.error = Some(format!("Unknown syscall: {}", rax));

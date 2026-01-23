@@ -117,7 +117,13 @@ fn run_simulation(
                         && &state.output[0..expected.len()] == expected.as_slice()
                 } else if expected.len() == 1 {
                     // Fallback to RAX if no stream output was produced but we expect 1 value
-                    rax == expected[0]
+                    // BUT: if we exited via sys_exit (60), RAX is 60 (or status),
+                    // so we should be careful if we are not expecting 60.
+                    if state.exited && rax == 60 && expected[0] != 60 {
+                        false
+                    } else {
+                        rax == expected[0]
+                    }
                 } else {
                     false
                 };

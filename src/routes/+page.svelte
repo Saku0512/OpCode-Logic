@@ -46,7 +46,7 @@ _start:
         console.error(e);
       }
     }
-    
+
     // Ensure initial code is set for 01_Mov&Call
     if (!currentLevel) {
       applyDefaultCode("01_Mov&Call");
@@ -62,7 +62,12 @@ _start:
         "opcode_completed_levels",
         JSON.stringify(Array.from(completedLevels)),
       );
-      console.log("Level completed:", id, "Completed levels:", Array.from(completedLevels));
+      console.log(
+        "Level completed:",
+        id,
+        "Completed levels:",
+        Array.from(completedLevels),
+      );
     }
   }
 
@@ -127,7 +132,12 @@ _start:
       if (vmState.output.length > 0) {
         output = vmState.output;
       } else {
-        output = [vmState.registers["RAX"] || 0];
+        // sys_exit (60) で終了した場合は RAX を出力として扱わない
+        if (vmState.exited && vmState.registers["RAX"] === 60) {
+          output = [];
+        } else {
+          output = [vmState.registers["RAX"] || 0];
+        }
       }
 
       if (!result.success) {
@@ -208,9 +218,9 @@ _start:
           </div>
           <Editor bind:code />
           {#if currentLevel}
-            <ExplanationView 
-              levelId={currentLevel.id} 
-              isCompleted={completedLevels.has(currentLevel.id)} 
+            <ExplanationView
+              levelId={currentLevel.id}
+              isCompleted={completedLevels.has(currentLevel.id)}
             />
           {/if}
         </div>
