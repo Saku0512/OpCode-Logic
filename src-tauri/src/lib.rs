@@ -94,8 +94,11 @@ fn run_simulation(
                         break;
                     } // complex programs might need more steps
 
-                    if !expected.is_empty() && vm.get_state().output.len() >= expected.len() && (expected.len() > 1 || level.id == "06_Unconditional") {
-                            break;
+                    if !expected.is_empty()
+                        && vm.get_state().output.len() >= expected.len()
+                        && (expected.len() > 1 || level.id == "06_Unconditional")
+                    {
+                        break;
                     }
                 }
 

@@ -689,10 +689,7 @@ type ParseResult = Result<
     String,
 >;
 
-pub fn parse_program(
-    code: &str,
-    syntax: Syntax,
-) -> ParseResult {
+pub fn parse_program(code: &str, syntax: Syntax) -> ParseResult {
     let mut instructions = Vec::new();
     let mut labels = HashMap::new();
     let mut data_labels = HashMap::new();
