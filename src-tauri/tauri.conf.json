@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "opecode-logic",
+  "productName": "opcode-logic",
   "version": "0.1.0",
-  "identifier": "com.saku0512.opecode-logic",
+  "identifier": "com.saku0512.opcode-logic",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:1420",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "opecode-logic",
+        "title": "opcode-logic",
         "width": 800,
         "height": 600,
         "maximized": true
