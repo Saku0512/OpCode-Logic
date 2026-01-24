@@ -20,7 +20,9 @@ fn strip_comment(line: &str) -> &str {
 
 fn is_label_def(line: &str) -> Option<&str> {
     let t = line.trim();
-    t.strip_suffix(':').map(|s| s.trim()).filter(|s| !s.is_empty())
+    t.strip_suffix(':')
+        .map(|s| s.trim())
+        .filter(|s| !s.is_empty())
 }
 
 fn is_ignorable_directive(line: &str) -> bool {
@@ -124,7 +126,11 @@ fn asm_one(engine: &Keystone, inst: &str, addr: u64) -> Result<KeystoneOutput, S
 /// - parse `label:` lines ourselves
 /// - iteratively compute label addresses and rewrite label references into absolute hex immediates
 /// - assemble line-by-line with correct per-instruction address
-pub fn assemble_x86_64(code: &str, syntax: Syntax, base_addr: u64) -> Result<AssembleResult, String> {
+pub fn assemble_x86_64(
+    code: &str,
+    syntax: Syntax,
+    base_addr: u64,
+) -> Result<AssembleResult, String> {
     let engine = init_engine(syntax)?;
     let entries = parse_entries(code);
 
@@ -212,4 +218,3 @@ mod tests {
         assert!(!res.bytes.is_empty());
     }
 }
-

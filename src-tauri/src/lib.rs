@@ -69,7 +69,8 @@ fn run_simulation(
                 println!("\n=== TEST CASE #{} ===", idx + 1);
                 println!("Input: {:?}", test_in);
                 println!("Expected: {:?}", expected);
-                let run = x86_runtime::run_x86_64(code, syntax_enum.clone(), test_in.clone(), 20_000)?;
+                let run =
+                    x86_runtime::run_x86_64(code, syntax_enum.clone(), test_in.clone(), 20_000)?;
 
                 // Validation
                 let state = run.state;

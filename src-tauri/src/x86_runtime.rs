@@ -73,7 +73,9 @@ fn parse_bss_layout(code: &str) -> BssLayout {
             continue;
         }
         if let Ok(size) = parts[2].parse::<u64>() {
-            layout.labels.insert(label_raw.to_string(), BSS_BASE + offset);
+            layout
+                .labels
+                .insert(label_raw.to_string(), BSS_BASE + offset);
             offset += size;
         }
     }
@@ -96,7 +98,10 @@ fn extract_text_section(code: &str) -> String {
             in_text = lower.contains(".text");
             continue;
         }
-        if ["global", "extern", "default", "bits"].iter().any(|k| lower.starts_with(k)) {
+        if ["global", "extern", "default", "bits"]
+            .iter()
+            .any(|k| lower.starts_with(k))
+        {
             continue;
         }
         if !in_text {
@@ -122,7 +127,10 @@ fn extract_text_section(code: &str) -> String {
             if lower.contains(" resb ") || lower.ends_with(" resb") || lower.contains(" resb\t") {
                 continue;
             }
-            if ["global", "extern", "default", "bits"].iter().any(|k| lower.starts_with(k)) {
+            if ["global", "extern", "default", "bits"]
+                .iter()
+                .any(|k| lower.starts_with(k))
+            {
                 continue;
             }
             out.push_str(line);
@@ -227,7 +235,11 @@ fn normalize_decimal_literals(line: &str) -> String {
             Some(cc) => cc.is_ascii_whitespace() || ",[]()+-*/:\t$".contains(cc),
         };
 
-        let prev = if i == 0 { None } else { Some(bytes[i - 1] as char) };
+        let prev = if i == 0 {
+            None
+        } else {
+            Some(bytes[i - 1] as char)
+        };
         let next = if i + 1 < bytes.len() {
             Some(bytes[i + 1] as char)
         } else {
@@ -256,7 +268,11 @@ fn normalize_decimal_literals(line: &str) -> String {
         let token = &line[start..i];
 
         // Already prefixed? (e.g. 0x12) — don't rewrite.
-        if token.starts_with("0x") || token.starts_with("-0x") || token.starts_with("0b") || token.starts_with("-0b") {
+        if token.starts_with("0x")
+            || token.starts_with("-0x")
+            || token.starts_with("0b")
+            || token.starts_with("-0b")
+        {
             out.push_str(token);
             continue;
         }
@@ -483,7 +499,11 @@ pub fn run_x86_64(
     let sf = (rflags & (1 << 7)) != 0;
 
     let rip = emu.reg_read(RegisterX86::RIP).unwrap_or(entry);
-    let pc = if rip >= CODE_BASE { (rip - CODE_BASE) as usize } else { 0 };
+    let pc = if rip >= CODE_BASE {
+        (rip - CODE_BASE) as usize
+    } else {
+        0
+    };
 
     // Return first 512 bytes from BSS region for UI
     let mut mem512 = vec![0u8; 512];
@@ -577,4 +597,3 @@ _start:
         assert!(res.state.error.is_none(), "VmState: {:?}", res.state);
     }
 }
-
