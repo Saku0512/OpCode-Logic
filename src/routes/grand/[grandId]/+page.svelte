@@ -85,16 +85,16 @@ _start:
     // Ensure a level is actually selected (otherwise RUN can "succeed" without saving progress)
     if (!currentLevel && stageLevels.length > 0) {
       const initial = pickHighestUnlocked(stageLevels) ?? stageLevels[0];
-      handleLevelSelect(initial);
+      await handleLevelSelect(initial);
     }
 
     // Ensure some initial code exists
     if (!currentLevel) {
-      applyDefaultCode("01_Mov&Call");
+      await applyDefaultCode("01_Mov&Call");
     }
   });
 
-  function handleLevelSelect(level: any) {
+  async function handleLevelSelect(level: any) {
     currentLevel = level;
     selectedLevelId = level.id;
     status = "READY";
@@ -108,16 +108,21 @@ _start:
       expected = level.test_cases[0][1];
     }
 
-    applyDefaultCode(level.id);
+    await applyDefaultCode(level.id);
   }
 
-  function applyDefaultCode(levelId: string) {
-    // レベルに合わせたコメント（MISSION/説明）を埋め込む
-    const level = stageLevels.find((l) => l.id === levelId) ?? currentLevel;
-    const mission = level?.name ?? levelId;
-    const desc = level?.description ?? "";
-
-    code = `section .bss
+  async function applyDefaultCode(levelId: string) {
+    // 可能ならステージごとの ini.asm を初期コードとして読み込む
+    try {
+      const ini: string = await invoke("get_level_ini", { levelId });
+      code = ini;
+      return;
+    } catch (e) {
+      // fallback: 以前のテンプレ
+      const level = stageLevels.find((l) => l.id === levelId) ?? currentLevel;
+      const mission = level?.name ?? levelId;
+      const desc = level?.description ?? "";
+      code = `section .bss
     buf resb 16
 
 section .text
@@ -131,11 +136,12 @@ _start:
     mov rax, 60
     xor rdi, rdi
     syscall`;
+    }
   }
 
   function resetCode() {
     if (currentLevel) {
-      applyDefaultCode(currentLevel.id);
+      void applyDefaultCode(currentLevel.id);
     }
   }
 

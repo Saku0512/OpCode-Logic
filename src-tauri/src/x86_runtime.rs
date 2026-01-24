@@ -159,6 +159,24 @@ fn preprocess_text(code: &str, syntax: &Syntax, bss_labels: &HashMap<String, u64
 
         let line = normalize_decimal_literals(line);
 
+        // Keystone label fixups do not handle `loop <label>` well when we rewrite labels
+        // into absolute immediates. Rewrite it into `dec rcx; jnz <label>`.
+        let lower = line.trim_start().to_lowercase();
+        if lower.starts_with("loop ") {
+            let target = line.trim_start()[4..].trim();
+            match syntax {
+                Syntax::Intel => {
+                    out.push_str("dec rcx\n");
+                    out.push_str(&format!("jnz {}\n", target));
+                }
+                Syntax::Att => {
+                    out.push_str("decq %rcx\n");
+                    out.push_str(&format!("jnz {}\n", target));
+                }
+            }
+            continue;
+        }
+
         match syntax {
             Syntax::Intel => {
                 if let Some((before, inside, after)) = split_first_bracket(&line) {
@@ -240,6 +258,64 @@ fn normalize_decimal_literals(line: &str) -> String {
         } else {
             Some(bytes[i - 1] as char)
         };
+        // If we are at a boundary and see a prefixed literal (0x/0b/0o),
+        // copy it verbatim. This avoids turning `0x20` into `0x0x20`.
+        if boundary(prev) {
+            // 0x... / 0b... / 0o...
+            if i + 1 < bytes.len() && bytes[i] == b'0' {
+                let p = bytes[i + 1];
+                if p == b'x' || p == b'X' || p == b'b' || p == b'B' || p == b'o' || p == b'O' {
+                    // Copy prefix
+                    out.push('0');
+                    out.push(p as char);
+                    i += 2;
+                    // Copy digits
+                    while i < bytes.len() {
+                        let cc = bytes[i] as char;
+                        let ok = match p {
+                            b'x' | b'X' => cc.is_ascii_hexdigit() || cc == '_',
+                            b'b' | b'B' => cc == '0' || cc == '1' || cc == '_',
+                            b'o' | b'O' => (cc.is_ascii_digit() && cc <= '7') || cc == '_',
+                            _ => false,
+                        };
+                        if ok {
+                            out.push(cc);
+                            i += 1;
+                        } else {
+                            break;
+                        }
+                    }
+                    continue;
+                }
+            }
+            // -0x... / -0b... / -0o...
+            if i + 2 < bytes.len() && bytes[i] == b'-' && bytes[i + 1] == b'0' {
+                let p = bytes[i + 2];
+                if p == b'x' || p == b'X' || p == b'b' || p == b'B' || p == b'o' || p == b'O' {
+                    out.push('-');
+                    out.push('0');
+                    out.push(p as char);
+                    i += 3;
+                    while i < bytes.len() {
+                        let cc = bytes[i] as char;
+                        let ok = match p {
+                            b'x' | b'X' => cc.is_ascii_hexdigit() || cc == '_',
+                            b'b' | b'B' => cc == '0' || cc == '1' || cc == '_',
+                            b'o' | b'O' => (cc.is_ascii_digit() && cc <= '7') || cc == '_',
+                            _ => false,
+                        };
+                        if ok {
+                            out.push(cc);
+                            i += 1;
+                        } else {
+                            break;
+                        }
+                    }
+                    continue;
+                }
+            }
+        }
+
         let next = if i + 1 < bytes.len() {
             Some(bytes[i + 1] as char)
         } else {

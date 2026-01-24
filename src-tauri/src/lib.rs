@@ -20,33 +20,54 @@ fn get_levels() -> Vec<levels::Level> {
     levels::get_levels()
 }
 
-#[tauri::command]
-fn get_level_explanation(level_id: String) -> Result<String, String> {
-    // レベルIDからファイルパスを生成
-    // 例: "01_Mov&Call" -> "commnet/1.The-Accumulator/Phase1-Registers&ALU/01_Mov&Call.md"
-    let file_path = match level_id.as_str() {
-        "01_Mov&Call" => "commnet/1.The-Accumulator/Phase1-Registers&ALU/01_Mov&Call.md",
-        "02_Addition" => "commnet/1.The-Accumulator/Phase1-Registers&ALU/02_Addition.md",
-        "03_Subtraction" => "commnet/1.The-Accumulator/Phase1-Registers&ALU/03_Subtraction.md",
-        "04_TheXORTrick" => "commnet/1.The-Accumulator/Phase1-Registers&ALU/04_TheXORTrick.md",
-        "05_Inc&Dec" => "commnet/1.The-Accumulator/Phase1-Registers&ALU/05_Inc&Dec.md",
-        "06_Unconditional" => "commnet/1.The-Accumulator/Phase2-Flags&Jumps/06_Unconditional.md",
-        "07_ZeroFlag" => "commnet/1.The-Accumulator/Phase2-Flags&Jumps/07_ZeroFlag.md",
-        "08_SignFlag" => "commnet/1.The-Accumulator/Phase2-Flags&Jumps/08_SignFlag.md",
-        "09_Comparison" => "commnet/1.The-Accumulator/Phase2-Flags&Jumps/09_Conmparison.md",
-        "10_Countdown" => "commnet/1.The-Accumulator/Phase3-LoopStructures/10_Countdown.md",
-        "11_Accumulate3" => "commnet/1.The-Accumulator/Phase3-LoopStructures/11_Accumulate3.md",
-        "12_TheAccumulator" => "commnet/1.The-Accumulator/BOSS/TheAccumulator.md",
-        _ => return Err(format!("Explanation not found for level: {}", level_id)),
-    };
+fn level_dir_for_id(level_id: &str) -> Option<&'static str> {
+    match level_id {
+        "01_Mov&Call" => Some("stages/1.The-Accumulator/Phase1-Registers&ALU/01_Mov&Call"),
+        "02_Addition" => Some("stages/1.The-Accumulator/Phase1-Registers&ALU/02_Addition"),
+        "03_Subtraction" => Some("stages/1.The-Accumulator/Phase1-Registers&ALU/03_Subtraction"),
+        "04_TheXORTrick" => Some("stages/1.The-Accumulator/Phase1-Registers&ALU/04_TheXORTrick"),
+        "05_Inc&Dec" => Some("stages/1.The-Accumulator/Phase1-Registers&ALU/05_Inc&Dec"),
+        "06_Unconditional" => Some("stages/1.The-Accumulator/Phase2-Flags&Jumps/06_Unconditional"),
+        "07_ZeroFlag" => Some("stages/1.The-Accumulator/Phase2-Flags&Jumps/07_ZeroFlag"),
+        "08_SignFlag" => Some("stages/1.The-Accumulator/Phase2-Flags&Jumps/08_SignFlag"),
+        "09_Comparison" => Some("stages/1.The-Accumulator/Phase2-Flags&Jumps/09_Comparison"),
+        "10_Countdown" => Some("stages/1.The-Accumulator/Phase3-LoopStructures/10_Countdown"),
+        "11_Accumulate3" => Some("stages/1.The-Accumulator/Phase3-LoopStructures/11_Accumulate3"),
+        "12_TheAccumulator" => Some("stages/1.The-Accumulator/BOSS/12_TheAccumulator"),
+        _ => None,
+    }
+}
 
+fn read_stage_file(rel_path: &str) -> Result<String, String> {
     // プロジェクトルートからの相対パスで読み込む
     let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     path.pop(); // src-tauri から出る
-    path.push(file_path);
+    path.push(rel_path);
+    fs::read_to_string(&path).map_err(|e| format!("Failed to read file: {} (path: {:?})", e, path))
+}
 
-    fs::read_to_string(&path)
-        .map_err(|e| format!("Failed to read explanation file: {} (path: {:?})", e, path))
+#[tauri::command]
+fn get_level_explanation(level_id: String) -> Result<String, String> {
+    let dir = level_dir_for_id(level_id.as_str())
+        .ok_or_else(|| format!("Stage files not found for level: {}", level_id))?;
+    let md = format!("{}/{}.md", dir, level_id);
+    read_stage_file(&md)
+}
+
+#[tauri::command]
+fn get_level_ini(level_id: String) -> Result<String, String> {
+    let dir = level_dir_for_id(level_id.as_str())
+        .ok_or_else(|| format!("Stage files not found for level: {}", level_id))?;
+    let p = format!("{}/ini.asm", dir);
+    read_stage_file(&p)
+}
+
+#[tauri::command]
+fn get_level_collect(level_id: String) -> Result<String, String> {
+    let dir = level_dir_for_id(level_id.as_str())
+        .ok_or_else(|| format!("Stage files not found for level: {}", level_id))?;
+    let p = format!("{}/collect.asm", dir);
+    read_stage_file(&p)
 }
 
 #[tauri::command]
@@ -139,7 +160,9 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             run_simulation,
             get_levels,
-            get_level_explanation
+            get_level_explanation,
+            get_level_ini,
+            get_level_collect
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

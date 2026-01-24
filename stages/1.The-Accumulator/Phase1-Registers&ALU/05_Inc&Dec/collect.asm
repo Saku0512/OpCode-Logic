@@ -1,35 +1,3 @@
-グランドステージ: 1.The Accumulator
-
-フェーズ: Phase 1 - Registers & ALU
-
-ステージ名: Inc & Dec
-
-ステージ内容: 入力を読み、各文字の偶数番目をinc、奇数番目をdecして出力する
-
-学習ポイント: inc/dec命令、インデックス操作、条件分岐
-
-ユーザーに初期状態で表示するコード
-
-```asm
-section .bss
-    buf resb 16
-
-section .text
-    global _start
-
-_start:
-    ; MISSION: Inc & Dec
-    ; read from stdin, inc even-indexed, dec odd-indexed bytes, write to stdout
-    
-    ; exit(0)
-    mov rax, 60
-    xor rdi, rdi
-    syscall
-```
-
-正解コード(あくまでも模範解答。ユーザーが出したコードが動けば正解とする)
-
-```asm
 section .bss
     buf resb 16
 
@@ -67,15 +35,15 @@ _start:
     jmp .loop
 
 .done_inc_dec:
-    ; write(1, buf, rax)
+    ; write(1, buf, rcx)
     mov rdx, rcx        ; number of bytes to write
     mov rax, 1          ; syscall: write
     mov rdi, 1          ; stdout
     mov rsi, buf
     syscall
-    
+
     ; exit(0)
     mov rax, 60
     xor rdi, rdi
     syscall
-```
+

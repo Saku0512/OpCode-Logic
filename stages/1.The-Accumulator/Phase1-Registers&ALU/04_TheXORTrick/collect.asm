@@ -1,35 +1,3 @@
-グランドステージ: 1.The Accumulator
-
-フェーズ: Phase 1 - Registers & ALU
-
-ステージ名: The XOR Trick
-
-ステージ内容: 入力を読み、各文字をXOR（0x20）で変換して出力する
-
-学習ポイント: xor命令、ビット演算、大文字小文字変換
-
-ユーザーに初期状態で表示するコード
-
-```asm
-section .bss
-    buf resb 16
-
-section .text
-    global _start
-
-_start:
-    ; MISSION: The XOR Trick
-    ; read from stdin, XOR each byte with 0x20, write to stdout
-    
-    ; exit(0)
-    mov rax, 60
-    xor rdi, rdi
-    syscall
-```
-
-正解コード(あくまでも模範解答。ユーザーが出したコードが動けば正解とする)
-
-```asm
 section .bss
     buf resb 16
 
@@ -60,15 +28,15 @@ _start:
     jmp .loop
 
 .done_xor:
-    ; write(1, buf, rax)
+    ; write(1, buf, rcx)
     mov rdx, rcx        ; number of bytes to write
     mov rax, 1          ; syscall: write
     mov rdi, 1          ; stdout
     mov rsi, buf
     syscall
-    
+
     ; exit(0)
     mov rax, 60
     xor rdi, rdi
     syscall
-```
+
