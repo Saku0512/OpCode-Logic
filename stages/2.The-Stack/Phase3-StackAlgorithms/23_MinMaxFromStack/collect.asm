@@ -1,42 +1,3 @@
-グランドステージ: 2.The Stack
-
-フェーズ: Phase 3 - Stack Algorithms
-
-ステージ名: Min & Max From Stack
-
-ステージ内容: 0が来るまで入力をpushし、popしながら最小値と最大値を求めて出力する
-
-学習ポイント: スタックでのバッファリング, cmp/jsによる大小判定, ループ, sys_write
-
-入力仕様:
-- 0: 終了
-- それ以外: 対象データ（少なくとも1つは与えられる）
-
-出力仕様:
-- sys_writeで「最小値→最大値」の順に出力する
-
-ユーザーに初期状態で表示するコード
-
-```asm
-section .bss
-    buf resb 16
-
-section .text
-    global _start
-
-_start:
-    ; MISSION: Min & Max From Stack
-    ; 0が来るまで値を読み、最後に min と max を sys_write する
-    
-    ; exit(0)
-    mov rax, 60
-    xor rdi, rdi
-    syscall
-```
-
-正解コード(あくまでも模範解答。ユーザーが出したコードが動けば正解とする)
-
-```asm
 section .bss
     buf resb 16
 
@@ -107,4 +68,4 @@ _start:
     mov rax, 60
     xor rdi, rdi
     syscall
-```
+

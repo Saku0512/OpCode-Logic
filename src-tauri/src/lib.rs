@@ -34,6 +34,21 @@ fn level_dir_for_id(level_id: &str) -> Option<&'static str> {
         "10_Countdown" => Some("stages/1.The-Accumulator/Phase3-LoopStructures/10_Countdown"),
         "11_Accumulate3" => Some("stages/1.The-Accumulator/Phase3-LoopStructures/11_Accumulate3"),
         "12_TheAccumulator" => Some("stages/1.The-Accumulator/BOSS/12_TheAccumulator"),
+        // GRAND STAGE 02: The Stack
+        "13_Push&Pop" => Some("stages/2.The-Stack/Phase1-StackBasics/13_Push&Pop"),
+        "14_SwapTwo" => Some("stages/2.The-Stack/Phase1-StackBasics/14_SwapTwo"),
+        "15_Duplicate" => Some("stages/2.The-Stack/Phase1-StackBasics/15_Duplicate"),
+        "16_Reverse3" => Some("stages/2.The-Stack/Phase2-StackAsBuffer/16_Reverse3"),
+        "17_ReverseUntil0" => Some("stages/2.The-Stack/Phase2-StackAsBuffer/17_ReverseUntil0"),
+        "18_SumFromStack" => Some("stages/2.The-Stack/Phase2-StackAsBuffer/18_SumFromStack"),
+        "19_SafePop" => Some("stages/2.The-Stack/Phase3-StackAlgorithms/19_SafePop"),
+        "20_RPN_AddOnly" => Some("stages/2.The-Stack/Phase3-StackAlgorithms/20_RPN_AddOnly"),
+        "21_Sort3" => Some("stages/2.The-Stack/Phase3-StackAlgorithms/21_Sort3"),
+        "22_Rotate3" => Some("stages/2.The-Stack/Phase3-StackAlgorithms/22_Rotate3"),
+        "23_MinMaxFromStack" => {
+            Some("stages/2.The-Stack/Phase3-StackAlgorithms/23_MinMaxFromStack")
+        }
+        "24_TheStackMachine" => Some("stages/2.The-Stack/BOSS/24_TheStackMachine"),
         _ => None,
     }
 }

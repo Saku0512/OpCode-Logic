@@ -141,6 +141,93 @@ pub fn get_levels() -> Vec<Level> {
                 (vec![('B' as i64), ('0' as i64)], vec![('b' as i64), ('1' as i64)]),
             ],
         },
+        // GRAND STAGE 02: The Stack
+        Level {
+            id: "13_Push&Pop".to_string(),
+            name: "Push & Pop".to_string(),
+            description: "Read A, push/pop it, then output A (1 byte).".to_string(),
+            test_cases: vec![(vec![42], vec![42]), (vec![-1], vec![-1]), (vec![0], vec![0])],
+        },
+        Level {
+            id: "14_SwapTwo".to_string(),
+            name: "Swap Two".to_string(),
+            description: "Read A,B and output B,A (2 bytes).".to_string(),
+            test_cases: vec![
+                (vec![1, 2], vec![2, 1]),
+                (vec![5, -1], vec![-1, 5]),
+            ],
+        },
+        Level {
+            id: "15_Duplicate".to_string(),
+            name: "Duplicate".to_string(),
+            description: "Read A and output A,A (2 bytes).".to_string(),
+            test_cases: vec![(vec![7], vec![7, 7]), (vec![-1], vec![-1, -1])],
+        },
+        Level {
+            id: "16_Reverse3".to_string(),
+            name: "Reverse 3".to_string(),
+            description: "Read A,B,C and output C,B,A (3 bytes).".to_string(),
+            test_cases: vec![(vec![1, 2, 3], vec![3, 2, 1]), (vec![-1, 0, 1], vec![1, 0, -1])],
+        },
+        Level {
+            id: "17_ReverseUntil0".to_string(),
+            name: "Reverse Until 0".to_string(),
+            description: "Read values until 0, output them reversed (0 not included).".to_string(),
+            test_cases: vec![
+                (vec![1, 2, 3, 0], vec![3, 2, 1]),
+                (vec![-1, 0], vec![-1]),
+                (vec![0], vec![]),
+            ],
+        },
+        Level {
+            id: "18_SumFromStack".to_string(),
+            name: "Sum From Stack".to_string(),
+            description: "Read values until 0, sum them, output 1 byte result.".to_string(),
+            test_cases: vec![(vec![1, 2, 3, 0], vec![6]), (vec![10, 20, 0], vec![30]), (vec![-1, 1, 0], vec![0])],
+        },
+        Level {
+            id: "19_SafePop".to_string(),
+            name: "Safe Pop".to_string(),
+            description: "Process tokens (push/pop) without underflow; output final depth.".to_string(),
+            test_cases: vec![
+                (vec![1, 5, 1, 6, -1, 0], vec![1]),
+                (vec![-1, 0], vec![0]),
+                (vec![1, 1, -1, -1, 0], vec![0]),
+            ],
+        },
+        Level {
+            id: "20_RPN_AddOnly".to_string(),
+            name: "RPN (Add Only)".to_string(),
+            description: "RPN evaluation: numbers push, -1 add, 0 end; output top.".to_string(),
+            test_cases: vec![(vec![2, 3, -1, 0], vec![5]), (vec![5, 1, -1, 0], vec![6])],
+        },
+        Level {
+            id: "21_Sort3".to_string(),
+            name: "Sort 3".to_string(),
+            description: "Read 3 values and output them sorted ascending (3 bytes).".to_string(),
+            test_cases: vec![(vec![3, 1, 2], vec![1, 2, 3]), (vec![-1, 0, 1], vec![-1, 0, 1])],
+        },
+        Level {
+            id: "22_Rotate3".to_string(),
+            name: "Rotate 3".to_string(),
+            description: "Read A,B,C and output B,C,A (3 bytes).".to_string(),
+            test_cases: vec![(vec![1, 2, 3], vec![2, 3, 1]), (vec![-1, 5, 0], vec![5, 0, -1])],
+        },
+        Level {
+            id: "23_MinMaxFromStack".to_string(),
+            name: "Min & Max From Stack".to_string(),
+            description: "Read values until 0; output min then max (2 bytes).".to_string(),
+            test_cases: vec![(vec![3, 1, 2, 0], vec![1, 3]), (vec![-1, -5, 2, 0], vec![-5, 2])],
+        },
+        Level {
+            id: "24_TheStackMachine".to_string(),
+            name: "The Stack Machine (BOSS)".to_string(),
+            description: "Token machine: +push, -1 add, -2 sub, -3 xor, 0 end; output top.".to_string(),
+            test_cases: vec![
+                (vec![5, 3, -2, 0], vec![2]),
+                (vec![1, 2, -1, 3, -3, 0], vec![0]),
+            ],
+        },
     ]
 }
 
