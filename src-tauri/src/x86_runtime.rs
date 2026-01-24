@@ -14,7 +14,7 @@ const STACK_SIZE: u64 = 0x0020_0000; // 2MB
 const PAGE_SIZE: u64 = 0x1000;
 
 fn align_up(x: u64, align: u64) -> u64 {
-    if x % align == 0 {
+    if x.is_multiple_of(align) {
         x
     } else {
         x + (align - (x % align))
@@ -279,7 +279,7 @@ fn normalize_decimal_literals(line: &str) -> String {
 
         if let Ok(val) = token.parse::<i64>() {
             if val < 0 {
-                out.push_str(&format!("-0x{:x}", (-val) as i64));
+                out.push_str(&format!("-0x{:x}", -val));
             } else {
                 out.push_str(&format!("0x{:x}", val));
             }
