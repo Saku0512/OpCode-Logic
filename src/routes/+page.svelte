@@ -1,245 +1,85 @@
 <script lang="ts">
-  import { invoke } from "@tauri-apps/api/core";
   import { onMount } from "svelte";
-  import Editor from "$lib/components/Editor.svelte";
-  import RegisterView from "$lib/components/RegisterView.svelte";
-  import IOView from "$lib/components/IOView.svelte";
-  import LevelSelector from "$lib/components/LevelSelector.svelte";
-  import ExplanationView from "$lib/components/ExplanationView.svelte";
+  import { goto } from "$app/navigation";
+  import { grandStages } from "$lib/grandStages";
+  import { completedLevelsStore, loadCompletedLevelsFromStorage } from "$lib/progress";
 
-  let syntax = "Intel";
-  let code = `section .bss
-    buf resb 16
-
-section .text
-    global _start
-
-_start:
-    ; MISSION: Mov & Call
-    ; read from stdin (syscall 0), write to stdout (syscall 1)
-    
-    ; exit(0)
-    mov rax, 60
-    xor rdi, rdi
-    syscall`;
-
-  let currentLevel: any = null;
-  let selectedLevelId: string | null = null;
-  let input: number[] = [0];
-  let output: number[] = [];
-  let expected: number[] = [];
-  let registers: Record<string, number> = {};
-  let status = "READY";
-  let message = "Select a level to begin the mission.";
-  let error: string | null = null;
-
-  // PROGRESSION SYSTEM
-  let completedLevels: Set<string> = new Set();
+  let ready = false;
 
   onMount(async () => {
-    // Load completed levels from localStorage
-    const stored = localStorage.getItem("opcode_completed_levels");
-    if (stored) {
-      try {
-        completedLevels = new Set(JSON.parse(stored));
-      } catch (e) {
-        console.error(e);
-      }
-    }
-
-    // Ensure initial code is set for 01_Mov&Call
-    if (!currentLevel) {
-      applyDefaultCode("01_Mov&Call");
-    }
+    loadCompletedLevelsFromStorage();
+    ready = true;
   });
 
-  function markLevelComplete(id: string) {
-    if (!completedLevels.has(id)) {
-      completedLevels.add(id);
-      // Svelte のリアクティビティを確実に動作させるため、新しい Set を作成
-      completedLevels = new Set(completedLevels);
-      localStorage.setItem(
-        "opcode_completed_levels",
-        JSON.stringify(Array.from(completedLevels)),
-      );
-      console.log(
-        "Level completed:",
-        id,
-        "Completed levels:",
-        Array.from(completedLevels),
-      );
-    }
+  function isStageCompleted(levelIds: string[]) {
+    return levelIds.every((id) => $completedLevelsStore.has(id));
   }
 
-  function handleLevelSelect(level: any) {
-    currentLevel = level;
-    selectedLevelId = level.id;
-    status = "READY";
-    message = level.description;
-    error = null;
-    registers = {};
-    output = [];
-
-    if (level.test_cases.length > 0) {
-      input = level.test_cases[0][0];
-      expected = level.test_cases[0][1];
-    }
-
-    applyDefaultCode(level.id);
+  function isStageUnlocked(index: number) {
+    if (index === 0) return true;
+    const prev = grandStages[index - 1];
+    return isStageCompleted(prev.levelIds);
   }
 
-  function applyDefaultCode(levelId: string) {
-    // すべてのステージで統一された初期コードを使用
-    code = `section .bss
-    buf resb 16
-
-section .text
-    global _start
-
-_start:
-    ; MISSION: Mov & Call
-    ; read from stdin (syscall 0), write to stdout (syscall 1)
-    
-    ; exit(0)
-    mov rax, 60
-    xor rdi, rdi
-    syscall`;
-  }
-
-  function resetCode() {
-    if (currentLevel) {
-      applyDefaultCode(currentLevel.id);
-    }
-  }
-
-  async function runSimulation() {
-    status = "EXECUTING...";
-    message = "Validating logic against test vectors...";
-    error = null;
-    output = [];
-
-    try {
-      const result: any = await invoke("run_simulation", {
-        code,
-        syntax,
-        input,
-        levelId: currentLevel ? currentLevel.id : null,
-      });
-
-      const vmState = result.vm_state;
-      registers = vmState.registers;
-
-      if (vmState.output.length > 0) {
-        output = vmState.output;
-      } else {
-        // sys_exit (60) で終了した場合は RAX を出力として扱わない
-        if (vmState.exited && vmState.registers["RAX"] === 60) {
-          output = [];
-        } else {
-          output = [vmState.registers["RAX"] || 0];
-        }
-      }
-
-      if (!result.success) {
-        status = "FAILED";
-        message = result.message;
-      } else {
-        status = "SUCCESS";
-        message = "Mission accomplished. Level cleared.";
-        if (currentLevel) {
-          markLevelComplete(currentLevel.id);
-        }
-      }
-
-      if (vmState.error) {
-        status = "RUNTIME ERROR";
-        error = vmState.error;
-      }
-    } catch (e) {
-      error = String(e);
-      status = "SYSTEM ERROR";
-    }
+  function openStage(index: number) {
+    if (!isStageUnlocked(index)) return;
+    const stage = grandStages[index];
+    goto(`/grand/${stage.id}`);
   }
 </script>
 
-<main class="container">
-  <div class="sidebar">
-    <LevelSelector
-      bind:selectedLevelId
-      {completedLevels}
-      onSelect={handleLevelSelect}
-    />
-  </div>
+<main class="screen">
+  <div class="panel glass">
+    <div class="brand">
+      <div class="brand-title">OPCODE LOGIC</div>
+      <div class="brand-sub">Grand Stage Select</div>
+    </div>
 
-  <div class="main-content">
-    <div class="header glass">
-      <div class="title-group">
-        <div class="level-info">
-          <div class="stage-badge">GRAND STAGE 01</div>
-          <h1>{currentLevel ? currentLevel.name : "OPCODE LOGIC"}</h1>
-          <p class="description">{message}</p>
-        </div>
-      </div>
-
-      <div class="action-group">
-        <div class="controls">
-          <select bind:value={syntax} class="syntax-select">
-            <option value="Intel">INTEL SYNTAX</option>
-            <option value="Att">AT&T SYNTAX</option>
-          </select>
-          <button class="btn-reset" on:click={resetCode}> RESET </button>
-          <button class="btn-run" on:click={runSimulation}>
-            <span class="btn-icon">▶</span> RUN & VERIFY
+    {#if !ready}
+      <div class="loading">Initializing...</div>
+    {:else}
+      <div class="grid">
+        {#each grandStages as stage, i}
+          {@const unlocked = isStageUnlocked(i)}
+          {@const completed = isStageCompleted(stage.levelIds)}
+          <button
+            class="card"
+            class:locked={!unlocked}
+            class:completed={completed}
+            disabled={!unlocked}
+            on:click={() => openStage(i)}
+          >
+            <div class="card-head">
+              <div class="badge">{stage.badge}</div>
+              <div class="status">
+                {#if completed}
+                  <span class="ok">CLEARED</span>
+                {:else if !unlocked}
+                  <span class="lock">LOCKED</span>
+                {:else}
+                  <span class="go">UNLOCKED</span>
+                {/if}
+              </div>
+            </div>
+            <div class="card-title">{stage.title}</div>
+            <div class="card-desc">{stage.description}</div>
+            <div class="card-foot">
+              <span class="meta">{stage.levelIds.length} levels</span>
+              <span class="meta">
+                {#if completed}
+                  ✓ 完了
+                {:else}
+                  {Array.from($completedLevelsStore).filter((id) => stage.levelIds.includes(id)).length}/{stage.levelIds.length}
+                {/if}
+              </span>
+            </div>
           </button>
-        </div>
-        <div
-          class="status-indicator"
-          class:success={status === "SUCCESS"}
-          class:error={status === "FAILED" || status.includes("ERROR")}
-        >
-          <span class="status-dot"></span>
-          <span class="status-text">{status}</span>
-        </div>
+        {/each}
       </div>
-    </div>
-
-    <div class="workspace">
-      {#if error}
-        <div class="error-banner glass-error">
-          <span class="error-label">EXCEPTION:</span>
-          {error}
-        </div>
-      {/if}
-
-      <div class="panels">
-        <div class="left-panel glass">
-          <div class="panel-header">
-            <span class="icon">📝</span> EDITOR
-          </div>
-          <Editor bind:code />
-          {#if currentLevel}
-            <ExplanationView
-              levelId={currentLevel.id}
-              isCompleted={completedLevels.has(currentLevel.id)}
-            />
-          {/if}
-        </div>
-        <div class="right-panel">
-          <div class="glass panel-inner">
-            <div class="panel-header">
-              <span class="icon">📊</span> REGISTERS
-            </div>
-            <RegisterView {registers} />
-          </div>
-          <div class="glass panel-inner">
-            <div class="panel-header">
-              <span class="icon">🔌</span> I/O STREAM
-            </div>
-            <IOView {input} {output} {expected} />
-          </div>
-        </div>
+      <div class="hint">
+        グランドステージは順番に解放されます。次のグランドへ進むには、前のグランドを全てクリアしてください。
       </div>
-    </div>
+    {/if}
   </div>
 </main>
 
@@ -261,28 +101,14 @@ _start:
     overflow: hidden;
   }
 
-  .container {
-    display: flex;
+  .screen {
     height: 100vh;
     width: 100vw;
-  }
-
-  .sidebar {
-    width: 280px;
-    flex-shrink: 0;
-    background: rgba(13, 15, 23, 0.7);
-    backdrop-filter: blur(20px);
-    border-right: 1px solid rgba(255, 255, 255, 0.05);
-  }
-
-  .main-content {
-    flex: 1;
     display: flex;
-    flex-direction: column;
-    padding: 1.5rem;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
     box-sizing: border-box;
-    min-width: 0;
-    gap: 1.25rem;
   }
 
   .glass {
@@ -293,200 +119,143 @@ _start:
     box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.5);
   }
 
-  .header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1.5rem 2rem;
+  .panel {
+    width: min(980px, 96vw);
+    padding: 2rem;
+    box-sizing: border-box;
   }
 
-  .stage-badge {
-    font-family: "Fira Code", monospace;
-    font-size: 0.7rem;
-    color: #3b82f6;
-    letter-spacing: 2px;
-    margin-bottom: 0.25rem;
+  .brand {
+    margin-bottom: 1.5rem;
   }
 
-  h1 {
-    margin: 0;
+  .brand-title {
+    font-weight: 900;
     font-size: 1.75rem;
-    font-weight: 800;
     letter-spacing: -0.5px;
     color: #fff;
   }
 
-  .description {
-    margin: 0.5rem 0 0;
+  .brand-sub {
+    margin-top: 0.35rem;
+    font-family: "Fira Code", monospace;
+    font-size: 0.75rem;
+    letter-spacing: 2px;
+    color: #3b82f6;
+    text-transform: uppercase;
+  }
+
+  .loading {
+    padding: 2rem 0;
+    text-align: center;
     color: #94a3b8;
     font-size: 0.95rem;
-    max-width: 600px;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  .card {
+    background: rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    padding: 1.25rem 1.25rem;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: #e2e8f0;
+  }
+
+  .card:hover:not(:disabled) {
+    transform: translateY(-2px);
+    border-color: rgba(59, 130, 246, 0.35);
+    box-shadow: 0 10px 30px -20px rgba(59, 130, 246, 0.7);
+  }
+
+  .card:disabled {
+    cursor: not-allowed;
+  }
+
+  .card.locked {
+    opacity: 0.45;
+  }
+
+  .card.completed {
+    border-color: rgba(16, 185, 129, 0.3);
+  }
+
+  .card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .badge {
+    font-family: "Fira Code", monospace;
+    font-size: 0.75rem;
+    letter-spacing: 2px;
+    color: #93c5fd;
+  }
+
+  .status span {
+    font-family: "Fira Code", monospace;
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 1px;
+  }
+
+  .ok {
+    color: #10b981;
+  }
+  .lock {
+    color: #94a3b8;
+  }
+  .go {
+    color: #60a5fa;
+  }
+
+  .card-title {
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: #fff;
+    margin-bottom: 0.35rem;
+  }
+
+  .card-desc {
+    color: #94a3b8;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    min-height: 3.2em;
+  }
+
+  .card-foot {
+    margin-top: 1rem;
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .meta {
+    color: #64748b;
+    font-family: "Fira Code", monospace;
+    font-size: 0.75rem;
+  }
+
+  .hint {
+    margin-top: 1.25rem;
+    color: #94a3b8;
+    font-size: 0.9rem;
     line-height: 1.6;
   }
 
-  .action-group {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 1rem;
-  }
-
-  .controls {
-    display: flex;
-    gap: 0.75rem;
-  }
-
-  .syntax-select {
-    background: rgba(0, 0, 0, 0.3);
-    color: #94a3b8;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    padding: 0.5rem 1rem;
-    border-radius: 10px;
-    font-family: "Fira Code", monospace;
-    font-size: 0.75rem;
-    cursor: pointer;
-    outline: none;
-  }
-
-  .btn-reset {
-    background: rgba(255, 255, 255, 0.05);
-    color: #94a3b8;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    padding: 0.6rem 1.25rem;
-    border-radius: 10px;
-    font-weight: 600;
-    font-size: 0.85rem;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .btn-reset:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: #fff;
-    border-color: rgba(255, 255, 255, 0.2);
-  }
-
-  .btn-run {
-    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-    color: #fff;
-    border: none;
-    padding: 0.6rem 2rem;
-    border-radius: 10px;
-    font-weight: 700;
-    font-size: 0.9rem;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    transition: all 0.2s;
-    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
-  }
-
-  .btn-run:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
-  }
-
-  .status-indicator {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    background: rgba(0, 0, 0, 0.2);
-    padding: 0.35rem 1rem;
-    border-radius: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-  }
-
-  .status-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: #64748b;
-  }
-
-  .status-text {
-    font-family: "Fira Code", monospace;
-    font-size: 0.7rem;
-    font-weight: 600;
-    color: #64748b;
-  }
-
-  .status-indicator.success .status-dot {
-    background: #10b981;
-    box-shadow: 0 0 10px #10b981;
-  }
-  .status-indicator.success .status-text {
-    color: #10b981;
-  }
-  .status-indicator.error .status-dot {
-    background: #ef4444;
-    box-shadow: 0 0 10px #ef4444;
-  }
-  .status-indicator.error .status-text {
-    color: #ef4444;
-  }
-
-  .workspace {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-    gap: 1rem;
-    min-height: 0;
-  }
-
-  .glass-error {
-    background: rgba(239, 68, 68, 0.1);
-    border: 1px solid rgba(239, 68, 68, 0.2);
-    color: #fca5a5;
-    padding: 1rem 1.5rem;
-    border-radius: 12px;
-    font-family: "Fira Code", monospace;
-    font-size: 0.85rem;
-  }
-
-  .error-label {
-    font-weight: 700;
-    color: #ef4444;
-    margin-right: 0.5rem;
-  }
-
-  .panels {
-    display: flex;
-    flex: 1;
-    gap: 1.25rem;
-    min-height: 0;
-  }
-
-  .left-panel {
-    flex: 1.2;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
-
-  .right-panel {
-    flex: 0.8;
-    display: flex;
-    flex-direction: column;
-    gap: 1.25rem;
-    min-width: 400px;
-  }
-
-  .panel-header {
-    padding: 1rem 1.25rem;
-    font-size: 0.7rem;
-    font-weight: 700;
-    color: #64748b;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
-  .panel-inner {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
+  @media (max-width: 840px) {
+    .grid {
+      grid-template-columns: 1fr;
+    }
   }
 </style>
