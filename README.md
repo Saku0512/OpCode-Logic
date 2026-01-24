@@ -34,6 +34,7 @@ OpCode Logicは、x86-64アセンブリ言語を楽しく学ぶための教育�
 - Node.js 18以上
 - Rust 1.70以上
 - Tauri CLI 2.x
+- （Linux）追加で必要な可能性: `cmake`, `clang`, `llvm-dev`, `libclang-dev`（Unicorn/Keystoneのビルド用）
 
 ### インストール
 

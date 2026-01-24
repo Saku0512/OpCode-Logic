@@ -5,28 +5,38 @@
     export let selectedLevelId: string | null = null;
     export let completedLevels: Set<string> = new Set();
     export let onSelect: (level: any) => void;
+    export let stageTitle: string = "GRAND STAGE";
+    export let levels: any[] | null = null; // optional (pass from parent)
 
-    let levels: any[] = [];
+    let fetchedLevels: any[] = [];
     let loading = true;
+
+    $: currentLevels = levels ?? fetchedLevels;
 
     // Helper to check if level is unlocked
     // We treat "index" as order. Level[0] is always unlocked.
     // Level[i] is unlocked if Level[i-1] is in completedLevels.
     function isUnlocked(index: number) {
         if (index === 0) return true;
-        if (levels.length === 0) return false;
-        const prevLevel = levels[index - 1];
+        if (currentLevels.length === 0) return false;
+        const prevLevel = currentLevels[index - 1];
         return completedLevels.has(prevLevel.id);
     }
 
     onMount(async () => {
+        // If parent provides levels, don't fetch here.
+        if (levels) {
+            loading = false;
+            return;
+        }
+
         try {
-            levels = await invoke("get_levels");
-            if (!selectedLevelId && levels.length > 0) {
+            fetchedLevels = await invoke("get_levels");
+            if (!selectedLevelId && fetchedLevels.length > 0) {
                 // Find highest unlocked level
-                let highest = levels[0];
-                for (let i = 1; i < levels.length; i++) {
-                    if (isUnlocked(i)) highest = levels[i];
+                let highest = fetchedLevels[0];
+                for (let i = 1; i < fetchedLevels.length; i++) {
+                    if (isUnlocked(i)) highest = fetchedLevels[i];
                     else break;
                 }
                 selectLevel(highest);
@@ -37,6 +47,16 @@
             loading = false;
         }
     });
+
+    // If parent provides levels later (async), auto-select highest unlocked.
+    $: if (!loading && levels && !selectedLevelId && levels.length > 0) {
+        let highest = levels[0];
+        for (let i = 1; i < levels.length; i++) {
+            if (isUnlocked(i)) highest = levels[i];
+            else break;
+        }
+        selectLevel(highest);
+    }
 
     function selectLevel(level: any) {
         selectedLevelId = level.id;
@@ -57,12 +77,12 @@
             <span class="ref-text">Reference</span>
         </a>
     </div>
-    <div class="stage-title">GRAND STAGE 1</div>
+    <div class="stage-title">{stageTitle}</div>
     {#if loading}
         <div class="loading">Initializing...</div>
     {:else}
         <div class="list">
-            {#each levels as level, i}
+            {#each currentLevels as level, i}
                 {@const unlocked = isUnlocked(i)}
                 {@const isCompleted = completedLevels.has(level.id)}
                 <button
