@@ -140,7 +140,6 @@ pub fn assemble_x86_64(code: &str, syntax: Syntax, base_addr: u64) -> Result<Ass
 
     // Iterate to stabilize label locations in case of short/near encoding selection.
     for _ in 0..6 {
-        last_labels = labels.clone();
         labels.clear();
 
         let mut pc = base_addr;
@@ -160,6 +159,9 @@ pub fn assemble_x86_64(code: &str, syntax: Syntax, base_addr: u64) -> Result<Ass
         if labels == last_labels {
             break;
         }
+
+        // Next iteration uses the newly computed label locations.
+        last_labels = labels.clone();
     }
 
     // Final assembly
