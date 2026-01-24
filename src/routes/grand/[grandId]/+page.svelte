@@ -24,9 +24,9 @@ section .text
     global _start
 
 _start:
-    ; MISSION: Mov & Call
-    ; read from stdin (syscall 0), write to stdout (syscall 1)
-    
+    ; MISSION: (select a level)
+    ; TODO: Write your code here.
+
     ; exit(0)
     mov rax, 60
     xor rdi, rdi
@@ -112,7 +112,11 @@ _start:
   }
 
   function applyDefaultCode(levelId: string) {
-    // すべてのステージで統一された初期コードを使用（後でレベル別テンプレを追加可能）
+    // レベルに合わせたコメント（MISSION/説明）を埋め込む
+    const level = stageLevels.find((l) => l.id === levelId) ?? currentLevel;
+    const mission = level?.name ?? levelId;
+    const desc = level?.description ?? "";
+
     code = `section .bss
     buf resb 16
 
@@ -120,9 +124,9 @@ section .text
     global _start
 
 _start:
-    ; MISSION: Mov & Call
-    ; read from stdin (syscall 0), write to stdout (syscall 1)
-    
+    ; MISSION: ${mission}
+    ${desc ? `; ${desc}` : ";"}
+
     ; exit(0)
     mov rax, 60
     xor rdi, rdi
