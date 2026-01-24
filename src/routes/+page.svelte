@@ -31,7 +31,7 @@
 <main class="screen">
   <div class="panel glass">
     <div class="brand">
-      <div class="brand-title">OPCODE LOGIC</div>
+      <div class="brand-title">OpCode Logic</div>
       <div class="brand-sub">Grand Stage Select</div>
     </div>
 
