@@ -1,6 +1,7 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/core";
   import { onMount } from "svelte";
+  import { get } from "svelte/store";
   import { page } from "$app/stores";
   import { goto } from "$app/navigation";
   import Editor from "$lib/components/Editor.svelte";
@@ -47,6 +48,18 @@ _start:
   let stageLevels: any[] = [];
   let stageMissingIds: string[] = [];
 
+  function pickHighestUnlocked(levels: any[]) {
+    if (!levels || levels.length === 0) return null;
+    const completed = get(completedLevelsStore);
+    let highest = levels[0];
+    for (let i = 1; i < levels.length; i++) {
+      const prev = levels[i - 1];
+      if (completed.has(prev.id)) highest = levels[i];
+      else break;
+    }
+    return highest;
+  }
+
   onMount(async () => {
     loadCompletedLevelsFromStorage();
 
@@ -67,6 +80,12 @@ _start:
       console.error("Failed to load levels", e);
       stageLevels = [];
       stageMissingIds = [];
+    }
+
+    // Ensure a level is actually selected (otherwise RUN can "succeed" without saving progress)
+    if (!currentLevel && stageLevels.length > 0) {
+      const initial = pickHighestUnlocked(stageLevels) ?? stageLevels[0];
+      handleLevelSelect(initial);
     }
 
     // Ensure some initial code exists
@@ -117,6 +136,12 @@ _start:
   }
 
   async function runSimulation() {
+    if (!currentLevel) {
+      status = "FAILED";
+      message = "左のリストからレベルを選択してから実行してください。";
+      error = null;
+      return;
+    }
     status = "EXECUTING...";
     message = "Validating logic against test vectors...";
     error = null;
@@ -127,7 +152,7 @@ _start:
         code,
         syntax,
         input,
-        levelId: currentLevel ? currentLevel.id : null,
+        levelId: currentLevel.id,
       });
 
       const vmState = result.vm_state;
@@ -150,9 +175,7 @@ _start:
       } else {
         status = "SUCCESS";
         message = "Mission accomplished. Level cleared.";
-        if (currentLevel) {
-          markLevelComplete(currentLevel.id);
-        }
+        markLevelComplete(currentLevel.id);
       }
 
       if (vmState.error) {
