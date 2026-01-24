@@ -14,7 +14,7 @@
     "test:coverage": "vitest --coverage",
     "tauri": "tauri"
   },
-  "license": "MIT",
+  "license": "GPL-2.0-only",
   "dependencies": {
     "@tauri-apps/api": "^2",
     "@tauri-apps/plugin-opener": "^2"

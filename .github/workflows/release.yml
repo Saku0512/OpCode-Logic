@@ -60,6 +60,11 @@ jobs:
             インストール方法は各OSの手順に従ってください。
             (ビルド完了後にアセットが追加されます)
 
+            ## License / Source
+            - License: GPL-2.0-only（`LICENSE`）
+            - Third-party notices: `THIRD_PARTY_NOTICES.md`
+            - Corresponding Source: `opcode-logic-${{ steps.version.outputs.version }}-corresponding-source.tar.gz`
+
   # 2. 全プラットフォームで並列ビルド
   build:
     needs: create-release
@@ -129,3 +134,60 @@ jobs:
           tagName: v${{ needs.create-release.outputs.version }}
           releaseId: ${{ needs.create-release.outputs.release_id }}
           args: ${{ matrix.args }}
+
+  # 3. 対応ソース（Corresponding Source）と告知ファイルをReleaseに添付
+  corresponding-source:
+    needs: create-release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Checkout tag
+        run: |
+          git checkout "v${{ needs.create-release.outputs.version }}"
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Vendor Rust crates (cargo vendor)
+        working-directory: src-tauri
+        run: |
+          cargo vendor vendor
+          mkdir -p .cargo
+          cat > .cargo/config.toml <<'EOF'
+          [source.crates-io]
+          replace-with = "vendored-sources"
+
+          [source.vendored-sources]
+          directory = "vendor"
+          EOF
+
+      - name: Create corresponding source tarball
+        run: |
+          VERSION="${{ needs.create-release.outputs.version }}"
+          NAME="opcode-logic-${VERSION}-corresponding-source"
+          mkdir -p dist
+          rsync -a --delete \
+            --exclude '.git' \
+            --exclude 'node_modules' \
+            --exclude 'release' \
+            --exclude 'dist' \
+            ./ "dist/${NAME}/"
+          tar -C dist -czf "dist/${NAME}.tar.gz" "${NAME}"
+          sha256sum "dist/${NAME}.tar.gz" > "dist/${NAME}.tar.gz.sha256"
+
+      - name: Upload corresponding source and notices
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ needs.create-release.outputs.version }}
+          files: |
+            dist/*.tar.gz
+            dist/*.sha256
+            LICENSE
+            THIRD_PARTY_NOTICES.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

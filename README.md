@@ -161,7 +161,7 @@ npm run check
 
 ## ライセンス
 
-MIT License
+GPL-2.0-only
 
 ## 推奨IDE設定
 
