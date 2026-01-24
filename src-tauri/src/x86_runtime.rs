@@ -159,6 +159,59 @@ fn preprocess_text(code: &str, syntax: &Syntax, bss_labels: &HashMap<String, u64
 
         let line = normalize_decimal_literals(line);
 
+        // Pseudo-IO: support tutorial `in <reg>` by rewriting it into a custom syscall.
+        // This keeps tutorial content readable while still using Keystone+Unicorn.
+        //
+        // `in rax`  -> `mov rax, 0x3e8; syscall`
+        // `in rbx`  -> `mov rax, 0x3e8; syscall; mov rbx, rax`
+        let lower = line.trim_start().to_lowercase();
+        if lower.starts_with("in ") {
+            let dst_raw = line.trim_start()[2..].trim();
+            let dst = dst_raw.trim_start_matches('%').to_lowercase();
+            match syntax {
+                Syntax::Intel => {
+                    if dst == "rax" {
+                        out.push_str("mov rax, 0x3e8\nsyscall\n");
+                    } else {
+                        // Preserve RAX across pseudo-IN, because some stages use `in rbx`/`in rcx`
+                        // after having loaded a meaningful value into RAX.
+                        out.push_str("push rax\n");
+                        out.push_str("mov rax, 0x3e8\nsyscall\n");
+                        out.push_str(&format!("mov {}, rax\n", dst));
+                        out.push_str("pop rax\n");
+                    }
+                }
+                Syntax::Att => {
+                    if dst == "rax" {
+                        out.push_str("movq $0x3e8, %rax\nsyscall\n");
+                    } else {
+                        out.push_str("pushq %rax\n");
+                        out.push_str("movq $0x3e8, %rax\nsyscall\n");
+                        out.push_str(&format!("movq %rax, %{}\n", dst));
+                        out.push_str("popq %rax\n");
+                    }
+                }
+            }
+            continue;
+        }
+
+        // Keystone label fixups do not handle `loop <label>` well when we rewrite labels
+        // into absolute immediates. Rewrite it into `dec rcx; jnz <label>`.
+        if lower.starts_with("loop ") {
+            let target = line.trim_start()[4..].trim();
+            match syntax {
+                Syntax::Intel => {
+                    out.push_str("dec rcx\n");
+                    out.push_str(&format!("jnz {}\n", target));
+                }
+                Syntax::Att => {
+                    out.push_str("decq %rcx\n");
+                    out.push_str(&format!("jnz {}\n", target));
+                }
+            }
+            continue;
+        }
+
         match syntax {
             Syntax::Intel => {
                 if let Some((before, inside, after)) = split_first_bracket(&line) {
@@ -240,6 +293,64 @@ fn normalize_decimal_literals(line: &str) -> String {
         } else {
             Some(bytes[i - 1] as char)
         };
+        // If we are at a boundary and see a prefixed literal (0x/0b/0o),
+        // copy it verbatim. This avoids turning `0x20` into `0x0x20`.
+        if boundary(prev) {
+            // 0x... / 0b... / 0o...
+            if i + 1 < bytes.len() && bytes[i] == b'0' {
+                let p = bytes[i + 1];
+                if p == b'x' || p == b'X' || p == b'b' || p == b'B' || p == b'o' || p == b'O' {
+                    // Copy prefix
+                    out.push('0');
+                    out.push(p as char);
+                    i += 2;
+                    // Copy digits
+                    while i < bytes.len() {
+                        let cc = bytes[i] as char;
+                        let ok = match p {
+                            b'x' | b'X' => cc.is_ascii_hexdigit() || cc == '_',
+                            b'b' | b'B' => cc == '0' || cc == '1' || cc == '_',
+                            b'o' | b'O' => (cc.is_ascii_digit() && cc <= '7') || cc == '_',
+                            _ => false,
+                        };
+                        if ok {
+                            out.push(cc);
+                            i += 1;
+                        } else {
+                            break;
+                        }
+                    }
+                    continue;
+                }
+            }
+            // -0x... / -0b... / -0o...
+            if i + 2 < bytes.len() && bytes[i] == b'-' && bytes[i + 1] == b'0' {
+                let p = bytes[i + 2];
+                if p == b'x' || p == b'X' || p == b'b' || p == b'B' || p == b'o' || p == b'O' {
+                    out.push('-');
+                    out.push('0');
+                    out.push(p as char);
+                    i += 3;
+                    while i < bytes.len() {
+                        let cc = bytes[i] as char;
+                        let ok = match p {
+                            b'x' | b'X' => cc.is_ascii_hexdigit() || cc == '_',
+                            b'b' | b'B' => cc == '0' || cc == '1' || cc == '_',
+                            b'o' | b'O' => (cc.is_ascii_digit() && cc <= '7') || cc == '_',
+                            _ => false,
+                        };
+                        if ok {
+                            out.push(cc);
+                            i += 1;
+                        } else {
+                            break;
+                        }
+                    }
+                    continue;
+                }
+            }
+        }
+
         let next = if i + 1 < bytes.len() {
             Some(bytes[i + 1] as char)
         } else {
@@ -447,6 +558,15 @@ pub fn run_x86_64(
             60 => {
                 uc.get_data_mut().exited = true;
                 let _ = uc.emu_stop();
+            }
+            1000 => {
+                // pseudo-IN: pop next i64 from input queue into RAX
+                if let Some(v) = uc.get_data_mut().input.pop_front() {
+                    let _ = uc.reg_write(RegisterX86::RAX, v as u64);
+                } else {
+                    uc.get_data_mut().error = Some("Input buffer empty".to_string());
+                    let _ = uc.emu_stop();
+                }
             }
             other => {
                 uc.get_data_mut().error = Some(format!("Unknown syscall: {}", other));

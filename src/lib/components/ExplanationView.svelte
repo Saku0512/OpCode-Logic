@@ -6,9 +6,13 @@
   export let isCompleted: boolean = false;
 
   let explanation: string | null = null;
+  let collectCode: string | null = null;
   let loading = false;
+  let loadingCollect = false;
   let error: string | null = null;
+  let errorCollect: string | null = null;
   let showExplanation = false;
+  let showSolution = false;
 
   async function loadExplanation() {
     if (!levelId || !isCompleted) return;
@@ -30,6 +34,27 @@
       loadExplanation();
     }
     showExplanation = !showExplanation;
+  }
+
+  async function loadCollect() {
+    if (!levelId || !isCompleted) return;
+    loadingCollect = true;
+    errorCollect = null;
+    try {
+      collectCode = await invoke("get_level_collect", { levelId });
+    } catch (e) {
+      errorCollect = String(e);
+      console.error("Failed to load collect.asm:", e);
+    } finally {
+      loadingCollect = false;
+    }
+  }
+
+  function toggleSolution() {
+    if (!showSolution && !collectCode) {
+      loadCollect();
+    }
+    showSolution = !showSolution;
   }
 
   // Markdownを簡単にレンダリング（基本的な処理）
@@ -63,10 +88,16 @@
 
 {#if isCompleted}
   <div class="explanation-container">
-    <button class="explanation-toggle" on:click={toggleExplanation}>
-      <span class="icon">📖</span>
-      <span>{showExplanation ? "解説を閉じる" : "解説を読む"}</span>
-    </button>
+    <div class="toggle-row">
+      <button class="explanation-toggle" on:click={toggleExplanation}>
+        <span class="icon">📖</span>
+        <span>{showExplanation ? "解説を閉じる" : "解説を読む"}</span>
+      </button>
+      <button class="explanation-toggle" on:click={toggleSolution}>
+        <span class="icon">✅</span>
+        <span>{showSolution ? "模範解答を閉じる" : "模範解答を見る"}</span>
+      </button>
+    </div>
 
     {#if showExplanation}
       <div class="explanation-panel glass">
@@ -81,12 +112,32 @@
         {/if}
       </div>
     {/if}
+
+    {#if showSolution}
+      <div class="explanation-panel glass">
+        {#if loadingCollect}
+          <div class="loading">模範解答を読み込んでいます...</div>
+        {:else if errorCollect}
+          <div class="error">模範解答の読み込みに失敗しました: {errorCollect}</div>
+        {:else if collectCode}
+          <div class="explanation-content">
+            <h2>模範解答（collect.asm）</h2>
+            <pre class="code-block"><code>{collectCode.trim()}</code></pre>
+          </div>
+        {/if}
+      </div>
+    {/if}
   </div>
 {/if}
 
 <style>
   .explanation-container {
     margin-top: 1rem;
+  }
+
+  .toggle-row {
+    display: flex;
+    gap: 0.75rem;
   }
 
   .explanation-toggle {

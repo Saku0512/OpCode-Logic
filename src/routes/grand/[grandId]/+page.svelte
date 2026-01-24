@@ -1,6 +1,7 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/core";
   import { onMount } from "svelte";
+  import { get } from "svelte/store";
   import { page } from "$app/stores";
   import { goto } from "$app/navigation";
   import Editor from "$lib/components/Editor.svelte";
@@ -23,9 +24,9 @@ section .text
     global _start
 
 _start:
-    ; MISSION: Mov & Call
-    ; read from stdin (syscall 0), write to stdout (syscall 1)
-    
+    ; MISSION: (select a level)
+    ; TODO: Write your code here.
+
     ; exit(0)
     mov rax, 60
     xor rdi, rdi
@@ -46,6 +47,18 @@ _start:
   $: grandStage = getGrandStage(grandId);
   let stageLevels: any[] = [];
   let stageMissingIds: string[] = [];
+
+  function pickHighestUnlocked(levels: any[]) {
+    if (!levels || levels.length === 0) return null;
+    const completed = get(completedLevelsStore);
+    let highest = levels[0];
+    for (let i = 1; i < levels.length; i++) {
+      const prev = levels[i - 1];
+      if (completed.has(prev.id)) highest = levels[i];
+      else break;
+    }
+    return highest;
+  }
 
   onMount(async () => {
     loadCompletedLevelsFromStorage();
@@ -69,13 +82,19 @@ _start:
       stageMissingIds = [];
     }
 
+    // Ensure a level is actually selected (otherwise RUN can "succeed" without saving progress)
+    if (!currentLevel && stageLevels.length > 0) {
+      const initial = pickHighestUnlocked(stageLevels) ?? stageLevels[0];
+      await handleLevelSelect(initial);
+    }
+
     // Ensure some initial code exists
     if (!currentLevel) {
-      applyDefaultCode("01_Mov&Call");
+      await applyDefaultCode("01_Mov&Call");
     }
   });
 
-  function handleLevelSelect(level: any) {
+  async function handleLevelSelect(level: any) {
     currentLevel = level;
     selectedLevelId = level.id;
     status = "READY";
@@ -89,34 +108,50 @@ _start:
       expected = level.test_cases[0][1];
     }
 
-    applyDefaultCode(level.id);
+    await applyDefaultCode(level.id);
   }
 
-  function applyDefaultCode(levelId: string) {
-    // すべてのステージで統一された初期コードを使用（後でレベル別テンプレを追加可能）
-    code = `section .bss
+  async function applyDefaultCode(levelId: string) {
+    // 可能ならステージごとの ini.asm を初期コードとして読み込む
+    try {
+      const ini: string = await invoke("get_level_ini", { levelId });
+      code = ini;
+      return;
+    } catch (e) {
+      // fallback: 以前のテンプレ
+      const level = stageLevels.find((l) => l.id === levelId) ?? currentLevel;
+      const mission = level?.name ?? levelId;
+      const desc = level?.description ?? "";
+      code = `section .bss
     buf resb 16
 
 section .text
     global _start
 
 _start:
-    ; MISSION: Mov & Call
-    ; read from stdin (syscall 0), write to stdout (syscall 1)
-    
+    ; MISSION: ${mission}
+    ${desc ? `; ${desc}` : ";"}
+
     ; exit(0)
     mov rax, 60
     xor rdi, rdi
     syscall`;
+    }
   }
 
   function resetCode() {
     if (currentLevel) {
-      applyDefaultCode(currentLevel.id);
+      void applyDefaultCode(currentLevel.id);
     }
   }
 
   async function runSimulation() {
+    if (!currentLevel) {
+      status = "FAILED";
+      message = "左のリストからレベルを選択してから実行してください。";
+      error = null;
+      return;
+    }
     status = "EXECUTING...";
     message = "Validating logic against test vectors...";
     error = null;
@@ -127,7 +162,7 @@ _start:
         code,
         syntax,
         input,
-        levelId: currentLevel ? currentLevel.id : null,
+        levelId: currentLevel.id,
       });
 
       const vmState = result.vm_state;
@@ -150,9 +185,7 @@ _start:
       } else {
         status = "SUCCESS";
         message = "Mission accomplished. Level cleared.";
-        if (currentLevel) {
-          markLevelComplete(currentLevel.id);
-        }
+        markLevelComplete(currentLevel.id);
       }
 
       if (vmState.error) {
