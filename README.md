@@ -71,8 +71,8 @@ npm run tauri build -- --target aarch64-apple-darwin  # Apple Silicon
 # 全プラットフォーム用のビルドを実行
 ./scripts/build-release.sh [version]
 
-# 例: バージョン0.1.0でビルド
-./scripts/build-release.sh 0.1.0
+# 例: バージョン0.3.0でビルド
+./scripts/build-release.sh 0.3.0
 ```
 
 ビルドファイルは `release/` ディレクトリに生成されます。
@@ -83,15 +83,15 @@ npm run tauri build -- --target aarch64-apple-darwin  # Apple Silicon
 
 ```bash
 # リリースタグを作成してプッシュ
-git tag -a v0.1.0 -m "Release v0.1.0"
-git push origin v0.1.0
+git tag -a v0.3.0 -m "Release v0.3.0"
+git push origin v0.3.0
 ```
 
 #### 方法2: スクリプトを使用
 
 ```bash
 # リリーススクリプトを実行
-./scripts/create-release.sh 0.1.0 "Release v0.1.0"
+./scripts/create-release.sh 0.3.0 "Release v0.3.0"
 ```
 
 #### 方法3: GitHub UIから手動実行

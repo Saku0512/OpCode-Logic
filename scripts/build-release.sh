@@ -5,7 +5,7 @@
 
 set -e
 
-VERSION=${1:-"0.1.0"}
+VERSION=${1:-"0.3.0"}
 RELEASE_DIR="release"
 BUILD_DIR="build"
 
