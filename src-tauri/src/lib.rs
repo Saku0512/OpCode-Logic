@@ -70,19 +70,39 @@ fn get_level_explanation(level_id: String) -> Result<String, String> {
 }
 
 #[tauri::command]
-fn get_level_ini(level_id: String) -> Result<String, String> {
+fn get_level_ini(level_id: String, syntax: String) -> Result<String, String> {
     let dir = level_dir_for_id(level_id.as_str())
         .ok_or_else(|| format!("Stage files not found for level: {}", level_id))?;
-    let p = format!("{}/ini.asm", dir);
-    read_stage_file(&p)
+    let primary = match syntax.as_str() {
+        "Att" => format!("{}/ini_Att.asm", dir),
+        _ => format!("{}/ini.asm", dir),
+    };
+    match read_stage_file(&primary) {
+        Ok(s) => Ok(s),
+        Err(_) => {
+            // Backward compatible fallback
+            let fallback = format!("{}/ini.asm", dir);
+            read_stage_file(&fallback)
+        }
+    }
 }
 
 #[tauri::command]
-fn get_level_collect(level_id: String) -> Result<String, String> {
+fn get_level_collect(level_id: String, syntax: String) -> Result<String, String> {
     let dir = level_dir_for_id(level_id.as_str())
         .ok_or_else(|| format!("Stage files not found for level: {}", level_id))?;
-    let p = format!("{}/collect.asm", dir);
-    read_stage_file(&p)
+    let primary = match syntax.as_str() {
+        "Att" => format!("{}/collect_Att.asm", dir),
+        _ => format!("{}/collect.asm", dir),
+    };
+    match read_stage_file(&primary) {
+        Ok(s) => Ok(s),
+        Err(_) => {
+            // Backward compatible fallback
+            let fallback = format!("{}/collect.asm", dir);
+            read_stage_file(&fallback)
+        }
+    }
 }
 
 #[tauri::command]
