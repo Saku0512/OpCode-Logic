@@ -1,5 +1,7 @@
 pub mod levels;
 pub mod vm;
+pub mod x86_asm;
+pub mod x86_runtime;
 
 use serde::Serialize;
 use std::fs;
@@ -60,18 +62,6 @@ fn run_simulation(
         _ => return Err("Invalid syntax type".to_string()),
     };
 
-    let (program, labels, data_labels) = vm::parse_program(code, syntax_enum.clone())?;
-
-    // パース結果をログ出力
-    println!("=== PARSED PROGRAM ===");
-    println!("Instructions: {}", program.len());
-    println!("Labels: {:?}", labels);
-    println!("Data labels: {:?}", data_labels);
-    for (idx, inst) in program.iter().enumerate() {
-        println!("  [{}] {:?}", idx, inst);
-    }
-    println!("======================");
-
     // If level_id is provided, verify against ALL test cases
     if let Some(lid) = level_id {
         if let Some(level) = levels::get_level(&lid) {
@@ -79,33 +69,12 @@ fn run_simulation(
                 println!("\n=== TEST CASE #{} ===", idx + 1);
                 println!("Input: {:?}", test_in);
                 println!("Expected: {:?}", expected);
-
-                let mut vm = vm::VM::new(
-                    program.clone(),
-                    labels.clone(),
-                    data_labels.clone(),
-                    test_in.clone(),
-                );
-
-                let mut steps = 0;
-                while vm.step() {
-                    steps += 1;
-                    if steps > 20000 {
-                        break;
-                    } // complex programs might need more steps
-
-                    if !expected.is_empty()
-                        && vm.get_state().output.len() >= expected.len()
-                        && (expected.len() > 1 || level.id == "06_Unconditional")
-                    {
-                        break;
-                    }
-                }
+                let run = x86_runtime::run_x86_64(code, syntax_enum.clone(), test_in.clone(), 20_000)?;
 
                 // Validation
-                let state = vm.get_state();
-                let execution_log = vm.get_execution_log();
-                let rax = vm.get_register(vm::Register::RAX);
+                let state = run.state;
+                let execution_log = run.execution_log;
+                let rax = *state.registers.get(&vm::Register::RAX).unwrap_or(&0);
 
                 println!("Final RAX: {}", rax);
                 println!("Final Output: {:?}", state.output);
@@ -147,20 +116,11 @@ fn run_simulation(
     // Single Run (Visualization)
     println!("\n=== SINGLE RUN (Visualization) ===");
     println!("Input: {:?}", input);
-
-    let mut vm = vm::VM::new(program, labels, data_labels, input);
-
-    let mut steps = 0;
-    while vm.step() {
-        steps += 1;
-        if steps > 10000 {
-            break;
-        }
-    }
-
-    let state = vm.get_state();
-    let execution_log = vm.get_execution_log();
-    println!("Final RAX: {}", vm.get_register(vm::Register::RAX));
+    let run = x86_runtime::run_x86_64(code, syntax_enum.clone(), input, 50_000)?;
+    let state = run.state;
+    let execution_log = run.execution_log;
+    let rax = *state.registers.get(&vm::Register::RAX).unwrap_or(&0);
+    println!("Final RAX: {}", rax);
     println!("Final Output: {:?}", state.output);
 
     Ok(SimulationResult {
