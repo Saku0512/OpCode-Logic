@@ -16,7 +16,7 @@
     markLevelComplete,
   } from "$lib/progress";
 
-  let syntax = "Intel";
+  let syntax: "Intel" | "Att" = "Intel";
   let code = `section .bss
     buf resb 16
 
@@ -114,7 +114,7 @@ _start:
   async function applyDefaultCode(levelId: string) {
     // 可能ならステージごとの ini.asm を初期コードとして読み込む
     try {
-      const ini: string = await invoke("get_level_ini", { levelId });
+      const ini: string = await invoke("get_level_ini", { levelId, syntax });
       code = ini;
       return;
     } catch (e) {
@@ -289,6 +289,7 @@ _start:
               <ExplanationView
                 levelId={currentLevel.id}
                 isCompleted={$completedLevelsStore.has(currentLevel.id)}
+                {syntax}
               />
             {/if}
           </div>

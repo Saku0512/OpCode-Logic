@@ -4,15 +4,37 @@
 
   export let levelId: string | null = null;
   export let isCompleted: boolean = false;
+  export let syntax: "Intel" | "Att" = "Intel";
 
   let explanation: string | null = null;
-  let collectCode: string | null = null;
+  let collectIntel: string | null = null;
+  let collectAtt: string | null = null;
   let loading = false;
   let loadingCollect = false;
   let error: string | null = null;
   let errorCollect: string | null = null;
   let showExplanation = false;
   let showSolution = false;
+  let solutionSyntax: "Intel" | "Att" = "Intel";
+  let lastLevelId: string | null = null;
+
+  $: currentCollect =
+    solutionSyntax === "Att" ? collectAtt : collectIntel;
+
+  // レベルが切り替わったらキャッシュや表示状態をクリア（前のレベルの内容が残るのを防ぐ）
+  $: if (levelId !== lastLevelId) {
+    lastLevelId = levelId;
+    explanation = null;
+    collectIntel = null;
+    collectAtt = null;
+    error = null;
+    errorCollect = null;
+    loading = false;
+    loadingCollect = false;
+    showExplanation = false;
+    showSolution = false;
+    solutionSyntax = syntax;
+  }
 
   async function loadExplanation() {
     if (!levelId || !isCompleted) return;
@@ -36,12 +58,17 @@
     showExplanation = !showExplanation;
   }
 
-  async function loadCollect() {
+  async function loadCollect(targetSyntax: "Intel" | "Att") {
     if (!levelId || !isCompleted) return;
     loadingCollect = true;
     errorCollect = null;
     try {
-      collectCode = await invoke("get_level_collect", { levelId });
+      const code: string = await invoke("get_level_collect", {
+        levelId,
+        syntax: targetSyntax,
+      });
+      if (targetSyntax === "Att") collectAtt = code;
+      else collectIntel = code;
     } catch (e) {
       errorCollect = String(e);
       console.error("Failed to load collect.asm:", e);
@@ -51,10 +78,20 @@
   }
 
   function toggleSolution() {
-    if (!showSolution && !collectCode) {
-      loadCollect();
+    if (!showSolution) {
+      solutionSyntax = syntax;
+      if (!currentCollect) {
+        loadCollect(solutionSyntax);
+      }
     }
     showSolution = !showSolution;
+  }
+
+  function onChangeSolutionSyntax(next: "Intel" | "Att") {
+    solutionSyntax = next;
+    if (!currentCollect) {
+      loadCollect(solutionSyntax);
+    }
   }
 
   // Markdownを簡単にレンダリング（基本的な処理）
@@ -119,10 +156,21 @@
           <div class="loading">模範解答を読み込んでいます...</div>
         {:else if errorCollect}
           <div class="error">模範解答の読み込みに失敗しました: {errorCollect}</div>
-        {:else if collectCode}
+        {:else if currentCollect}
           <div class="explanation-content">
-            <h2>模範解答（collect.asm）</h2>
-            <pre class="code-block"><code>{collectCode.trim()}</code></pre>
+            <div class="solution-head">
+              <h2>模範解答（collect.asm）</h2>
+              <select
+                class="syntax-select"
+                bind:value={solutionSyntax}
+                on:change={(e) =>
+                  onChangeSolutionSyntax((e.currentTarget as HTMLSelectElement).value as any)}
+              >
+                <option value="Intel">Intel</option>
+                <option value="Att">AT&amp;T</option>
+              </select>
+            </div>
+            <pre class="code-block"><code>{currentCollect.trim()}</code></pre>
           </div>
         {/if}
       </div>
@@ -138,6 +186,25 @@
   .toggle-row {
     display: flex;
     gap: 0.75rem;
+  }
+
+  .solution-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .syntax-select {
+    background: rgba(0, 0, 0, 0.25);
+    color: #94a3b8;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    padding: 0.45rem 0.75rem;
+    border-radius: 10px;
+    font-family: "Fira Code", monospace;
+    font-size: 0.75rem;
+    cursor: pointer;
+    outline: none;
   }
 
   .explanation-toggle {
