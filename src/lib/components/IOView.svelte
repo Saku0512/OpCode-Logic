@@ -23,14 +23,16 @@
         </div>
     </div>
 
-    <div class="section">
-        <h3>Expected Output</h3>
-        <div class="queue expected-queue">
-            {#each expected as val}
-                <div class="item expected">{val}</div>
-            {/each}
+    {#if expected.length > 0}
+        <div class="section">
+            <h3>Expected Output</h3>
+            <div class="queue expected-queue">
+                {#each expected as val}
+                    <div class="item expected">{val}</div>
+                {/each}
+            </div>
         </div>
-    </div>
+    {/if}
 </div>
 
 <style>

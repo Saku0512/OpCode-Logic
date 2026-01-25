@@ -26,6 +26,10 @@
     const stage = grandStages[index];
     goto(`/grand/${stage.id}`);
   }
+
+  function openFreeEditor() {
+    goto("/free");
+  }
 </script>
 
 <main class="screen">
@@ -78,6 +82,13 @@
       </div>
       <div class="hint">
         グランドステージは順番に解放されます。次のグランドへ進むには、前のグランドを全てクリアしてください。
+      </div>
+
+      <div class="free-editor-link">
+        <button class="link-free-editor" on:click={openFreeEditor}>
+          <span class="icon">💻</span>
+          <span>Free x86-64 Editor</span>
+        </button>
       </div>
     {/if}
   </div>
@@ -257,5 +268,34 @@
     .grid {
       grid-template-columns: 1fr;
     }
+  }
+
+  .free-editor-link {
+    margin-top: 1.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 1.5rem;
+  }
+
+  .link-free-editor {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 100%;
+    background: rgba(59, 130, 246, 0.1);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    color: #60a5fa;
+    padding: 0.75rem 1.25rem;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .link-free-editor:hover {
+    background: rgba(59, 130, 246, 0.2);
+    border-color: rgba(59, 130, 246, 0.5);
+    color: #93c5fd;
   }
 </style>
