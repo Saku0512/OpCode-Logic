@@ -118,7 +118,7 @@ jobs:
           # Tauri v1の場合は libwebkit2gtk-4.0-dev に変更してください
 
       - name: Setup CMake
-        uses: lukka/get-cmake@v4
+        uses: lukka/get-cmake@v4.0.2
         with:
           cmakeVersion: '^3.28.0'
 
