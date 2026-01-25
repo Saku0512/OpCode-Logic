@@ -4,7 +4,7 @@ import IOView from './IOView.svelte';
 
 describe('IOView', () => {
   it('renders all sections', () => {
-    render(IOView, { input: [], output: [], expected: [] });
+    render(IOView, { input: [], output: [], expected: [0] });
     
     expect(screen.getByText('Input Queue')).toBeInTheDocument();
     expect(screen.getByText('Output Queue')).toBeInTheDocument();
@@ -43,7 +43,7 @@ describe('IOView', () => {
     
     expect(screen.getByText('Input Queue')).toBeInTheDocument();
     expect(screen.getByText('Output Queue')).toBeInTheDocument();
-    expect(screen.getByText('Expected Output')).toBeInTheDocument();
+    expect(screen.queryByText('Expected Output')).not.toBeInTheDocument();
   });
 
   it('displays negative numbers correctly', () => {
