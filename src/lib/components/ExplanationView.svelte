@@ -18,8 +18,7 @@
   let solutionSyntax: "Intel" | "Att" = "Intel";
   let lastLevelId: string | null = null;
 
-  $: currentCollect =
-    solutionSyntax === "Att" ? collectAtt : collectIntel;
+  $: currentCollect = solutionSyntax === "Att" ? collectAtt : collectIntel;
 
   // レベルが切り替わったらキャッシュや表示状態をクリア（前のレベルの内容が残るのを防ぐ）
   $: if (levelId !== lastLevelId) {
@@ -38,7 +37,7 @@
 
   async function loadExplanation() {
     if (!levelId || !isCompleted) return;
-    
+
     loading = true;
     error = null;
     try {
@@ -97,30 +96,37 @@
   // Markdownを簡単にレンダリング（基本的な処理）
   function formatMarkdown(text: string): string {
     let formatted = text;
-    
+
     // コードブロックを処理（```で囲まれた部分）
-    formatted = formatted.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, lang, code) => {
-      return `<pre class="code-block"><code>${code.trim()}</code></pre>`;
-    });
-    
+    formatted = formatted.replace(
+      /```(\w+)?\n([\s\S]*?)```/g,
+      (match, lang, code) => {
+        return `<pre class="code-block"><code>${code.trim()}</code></pre>`;
+      },
+    );
+
     // 見出しを処理
-    formatted = formatted.replace(/^### (.*$)/gim, '<h3>$1</h3>');
-    formatted = formatted.replace(/^## (.*$)/gim, '<h2>$1</h2>');
-    formatted = formatted.replace(/^# (.*$)/gim, '<h1>$1</h1>');
-    
+    formatted = formatted.replace(/^### (.*$)/gim, "<h3>$1</h3>");
+    formatted = formatted.replace(/^## (.*$)/gim, "<h2>$1</h2>");
+    formatted = formatted.replace(/^# (.*$)/gim, "<h1>$1</h1>");
+
     // 太字を処理
-    formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-    
+    formatted = formatted.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+
     // 段落を処理（空行で区切る）
     const paragraphs = formatted.split(/\n\n+/);
-    formatted = paragraphs.map(p => {
-      p = p.trim();
-      if (!p || p.startsWith('<')) return p; // 既にHTMLタグがある場合はそのまま
-      return `<p>${p.replace(/\n/g, '<br>')}</p>`;
-    }).join('');
-    
+    formatted = paragraphs
+      .map((p) => {
+        p = p.trim();
+        if (!p || p.startsWith("<")) return p; // 既にHTMLタグがある場合はそのまま
+        return `<p>${p.replace(/\n/g, "<br>")}</p>`;
+      })
+      .join("");
+
     return formatted;
   }
+
+  import { t } from "svelte-i18n";
 </script>
 
 {#if isCompleted}
@@ -128,20 +134,30 @@
     <div class="toggle-row">
       <button class="explanation-toggle" on:click={toggleExplanation}>
         <span class="icon">📖</span>
-        <span>{showExplanation ? "解説を閉じる" : "解説を読む"}</span>
+        <span
+          >{showExplanation
+            ? $t("explanation.close")
+            : $t("explanation.read")}</span
+        >
       </button>
       <button class="explanation-toggle" on:click={toggleSolution}>
         <span class="icon">✅</span>
-        <span>{showSolution ? "模範解答を閉じる" : "模範解答を見る"}</span>
+        <span
+          >{showSolution
+            ? $t("explanation.close_solution")
+            : $t("explanation.view_solution")}</span
+        >
       </button>
     </div>
 
     {#if showExplanation}
       <div class="explanation-panel glass">
         {#if loading}
-          <div class="loading">解説を読み込んでいます...</div>
+          <div class="loading">{$t("explanation.loading")}</div>
         {:else if error}
-          <div class="error">解説の読み込みに失敗しました: {error}</div>
+          <div class="error">
+            {$t("explanation.error", { values: { error } })}
+          </div>
         {:else if explanation}
           <div class="explanation-content">
             {@html formatMarkdown(explanation)}
@@ -153,18 +169,24 @@
     {#if showSolution}
       <div class="explanation-panel glass">
         {#if loadingCollect}
-          <div class="loading">模範解答を読み込んでいます...</div>
+          <div class="loading">{$t("explanation.loading_solution")}</div>
         {:else if errorCollect}
-          <div class="error">模範解答の読み込みに失敗しました: {errorCollect}</div>
+          <div class="error">
+            {$t("explanation.error_solution", {
+              values: { error: errorCollect },
+            })}
+          </div>
         {:else if currentCollect}
           <div class="explanation-content">
             <div class="solution-head">
-              <h2>模範解答（collect.asm）</h2>
+              <h2>{$t("explanation.solution_title")}</h2>
               <select
                 class="syntax-select"
                 bind:value={solutionSyntax}
                 on:change={(e) =>
-                  onChangeSolutionSyntax((e.currentTarget as HTMLSelectElement).value as any)}
+                  onChangeSolutionSyntax(
+                    (e.currentTarget as HTMLSelectElement).value as any,
+                  )}
               >
                 <option value="Intel">Intel</option>
                 <option value="Att">AT&amp;T</option>

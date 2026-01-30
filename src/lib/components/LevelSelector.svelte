@@ -1,3 +1,7 @@
+<script lang="ts" context="module">
+    import { t } from "svelte-i18n";
+</script>
+
 <script lang="ts">
     import { onMount } from "svelte";
     import { invoke } from "@tauri-apps/api/core";
@@ -64,9 +68,9 @@
     }
 
     function goToReference() {
-        window.location.hash = '#/reference';
+        window.location.hash = "#/reference";
         // For SPA mode with SvelteKit, we might need to use navigation
-        window.location.pathname = '/reference';
+        window.location.pathname = "/reference";
     }
 </script>
 
@@ -95,7 +99,9 @@
                         if (unlocked) {
                             selectLevel(level);
                         } else {
-                            console.log(`Level ${level.id} is locked. Previous level must be completed first.`);
+                            console.log(
+                                `Level ${level.id} is locked. Previous level must be completed first.`,
+                            );
                         }
                     }}
                 >
@@ -113,7 +119,7 @@
                             >STG_{String(i + 1).padStart(2, "0")}</span
                         >
                         <span class="level-name text-truncate"
-                            >{level.name}</span
+                            >{$t(`levels.${level.id}.name`)}</span
                         >
                     </div>
                 </button>
@@ -141,7 +147,11 @@
         width: 100%;
         padding: 0.75rem 0.75rem;
         margin-bottom: 0.25rem;
-        background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(99, 102, 241, 0.1) 100%);
+        background: linear-gradient(
+            135deg,
+            rgba(59, 130, 246, 0.2) 0%,
+            rgba(99, 102, 241, 0.1) 100%
+        );
         border: 1px solid rgba(99, 102, 241, 0.3);
         border-radius: 8px;
         color: #93c5fd;
@@ -155,7 +165,11 @@
     }
 
     .reference-btn:hover {
-        background: linear-gradient(135deg, rgba(59, 130, 246, 0.3) 0%, rgba(99, 102, 241, 0.2) 100%);
+        background: linear-gradient(
+            135deg,
+            rgba(59, 130, 246, 0.3) 0%,
+            rgba(99, 102, 241, 0.2) 100%
+        );
         border-color: rgba(99, 102, 241, 0.5);
         color: #bfdbfe;
     }

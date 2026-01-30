@@ -2,7 +2,12 @@
   import { onMount } from "svelte";
   import { goto } from "$app/navigation";
   import { grandStages } from "$lib/grandStages";
-  import { completedLevelsStore, loadCompletedLevelsFromStorage } from "$lib/progress";
+  import {
+    completedLevelsStore,
+    loadCompletedLevelsFromStorage,
+  } from "$lib/progress";
+  import { t } from "svelte-i18n";
+  import LanguageSelector from "$lib/components/LanguageSelector.svelte";
 
   let ready = false;
 
@@ -34,13 +39,16 @@
 
 <main class="screen">
   <div class="panel glass">
-    <div class="brand">
-      <div class="brand-title">OpCode Logic</div>
-      <div class="brand-sub">Grand Stage Select</div>
+    <div class="brand-container">
+      <div class="brand">
+        <div class="brand-title">OpCode Logic</div>
+        <div class="brand-sub">{$t("top.brand_sub")}</div>
+      </div>
+      <LanguageSelector />
     </div>
 
     {#if !ready}
-      <div class="loading">Initializing...</div>
+      <div class="loading">{$t("common.initializing")}</div>
     {:else}
       <div class="grid">
         {#each grandStages as stage, i}
@@ -49,7 +57,7 @@
           <button
             class="card"
             class:locked={!unlocked}
-            class:completed={completed}
+            class:completed
             disabled={!unlocked}
             on:click={() => openStage(i)}
           >
@@ -57,23 +65,31 @@
               <div class="badge">{stage.badge}</div>
               <div class="status">
                 {#if completed}
-                  <span class="ok">CLEARED</span>
+                  <span class="ok">{$t("common.cleared")}</span>
                 {:else if !unlocked}
-                  <span class="lock">LOCKED</span>
+                  <span class="lock">{$t("common.locked")}</span>
                 {:else}
-                  <span class="go">UNLOCKED</span>
+                  <span class="go">{$t("common.unlocked")}</span>
                 {/if}
               </div>
             </div>
-            <div class="card-title">{stage.title}</div>
-            <div class="card-desc">{stage.description}</div>
+            <div class="card-title">{$t(`grand_stages.${stage.id}.title`)}</div>
+            <div class="card-desc">
+              {$t(`grand_stages.${stage.id}.description`)}
+            </div>
             <div class="card-foot">
-              <span class="meta">{stage.levelIds.length} levels</span>
+              <span class="meta"
+                >{$t("common.levels", {
+                  values: { count: stage.levelIds.length },
+                })}</span
+              >
               <span class="meta">
                 {#if completed}
-                  ✓ 完了
+                  {$t("common.done")}
                 {:else}
-                  {Array.from($completedLevelsStore).filter((id) => stage.levelIds.includes(id)).length}/{stage.levelIds.length}
+                  {Array.from($completedLevelsStore).filter((id) =>
+                    stage.levelIds.includes(id),
+                  ).length}/{stage.levelIds.length}
                 {/if}
               </span>
             </div>
@@ -81,13 +97,13 @@
         {/each}
       </div>
       <div class="hint">
-        グランドステージは順番に解放されます。次のグランドへ進むには、前のグランドを全てクリアしてください。
+        {$t("top.hint")}
       </div>
 
       <div class="free-editor-link">
         <button class="link-free-editor" on:click={openFreeEditor}>
           <span class="icon">💻</span>
-          <span>Free x86-64 Editor</span>
+          <span>{$t("top.free_editor")}</span>
         </button>
       </div>
     {/if}
@@ -136,8 +152,15 @@
     box-sizing: border-box;
   }
 
-  .brand {
+  .brand-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
     margin-bottom: 1.5rem;
+  }
+
+  .brand {
+    margin: 0;
   }
 
   .brand-title {

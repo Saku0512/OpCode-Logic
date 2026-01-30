@@ -9,7 +9,9 @@
   import IOView from "$lib/components/IOView.svelte";
   import LevelSelector from "$lib/components/LevelSelector.svelte";
   import ExplanationView from "$lib/components/ExplanationView.svelte";
+  import LanguageSelector from "$lib/components/LanguageSelector.svelte";
   import { getGrandStage } from "$lib/grandStages";
+  import { t } from "svelte-i18n";
   import {
     completedLevelsStore,
     loadCompletedLevelsFromStorage,
@@ -38,8 +40,8 @@ _start:
   let output: number[] = [];
   let expected: number[] = [];
   let registers: Record<string, number> = {};
-  let status = "READY";
-  let message = "Select a level to begin the mission.";
+  let statusKey = "status.ready";
+  let messageKey = "status.select_to_begin";
   let error: string | null = null;
 
   // Grand stage context
@@ -97,8 +99,8 @@ _start:
   async function handleLevelSelect(level: any) {
     currentLevel = level;
     selectedLevelId = level.id;
-    status = "READY";
-    message = level.description;
+    statusKey = "status.ready";
+    messageKey = `levels.${level.id}.description`;
     error = null;
     registers = {};
     output = [];
@@ -120,8 +122,8 @@ _start:
     } catch (e) {
       // fallback: 以前のテンプレ
       const level = stageLevels.find((l) => l.id === levelId) ?? currentLevel;
-      const mission = level?.name ?? levelId;
-      const desc = level?.description ?? "";
+      const mission = $t(`levels.${levelId}.name`);
+      const desc = $t(`levels.${levelId}.description`);
       code = `section .bss
     buf resb 16
 
@@ -145,15 +147,17 @@ _start:
     }
   }
 
+  let simulationMessage: string | null = null;
+
   async function runSimulation() {
     if (!currentLevel) {
-      status = "FAILED";
-      message = "左のリストからレベルを選択してから実行してください。";
+      statusKey = "status.failed";
+      messageKey = "status.select_level";
       error = null;
       return;
     }
-    status = "EXECUTING...";
-    message = "Validating logic against test vectors...";
+    statusKey = "status.executing";
+    messageKey = "status.validating";
     error = null;
     output = [];
 
@@ -180,21 +184,22 @@ _start:
       }
 
       if (!result.success) {
-        status = "FAILED";
-        message = result.message;
+        statusKey = "status.failed";
+        simulationMessage = result.message;
       } else {
-        status = "SUCCESS";
-        message = "Mission accomplished. Level cleared.";
+        statusKey = "status.success";
+        messageKey = "status.mission_accomplished";
+        simulationMessage = null;
         markLevelComplete(currentLevel.id);
       }
 
       if (vmState.error) {
-        status = "RUNTIME ERROR";
+        statusKey = "status.runtime_error";
         error = vmState.error;
       }
     } catch (e) {
       error = String(e);
-      status = "SYSTEM ERROR";
+      statusKey = "status.system_error";
     }
   }
 
@@ -206,24 +211,30 @@ _start:
 {#if !grandStage}
   <main class="container">
     <div class="center glass">
-      <div class="stage-badge">UNKNOWN STAGE</div>
-      <h1>Unknown Grand Stage</h1>
-      <p class="description">指定されたグランドステージが見つかりませんでした。</p>
-      <button class="btn-primary" on:click={goBack}>ステージ選択へ戻る</button>
+      <div class="stage-badge">{$t("common.unknown_stage")}</div>
+      <h1>{$t("common.unknown_stage_title")}</h1>
+      <p class="description">{$t("common.unknown_stage_desc")}</p>
+      <button class="btn-primary" on:click={goBack}
+        >{$t("common.back_to_stages")}</button
+      >
     </div>
   </main>
 {:else if stageLevels.length === 0}
   <main class="container">
     <div class="center glass">
       <div class="stage-badge">{grandStage.badge}</div>
-      <h1>{grandStage.title}</h1>
+      <h1>{$t(`grand_stages.${grandStage.id}.title`)}</h1>
       <p class="description">
-        このグランドステージのレベル定義はまだアプリに実装されていません。
+        {$t("common.stage_not_implemented")}
       </p>
       {#if stageMissingIds.length > 0}
-        <p class="subtle">未実装ID: {stageMissingIds.join(", ")}</p>
+        <p class="subtle">
+          {$t("common.missing_id")}{stageMissingIds.join(", ")}
+        </p>
       {/if}
-      <button class="btn-primary" on:click={goBack}>ステージ選択へ戻る</button>
+      <button class="btn-primary" on:click={goBack}
+        >{$t("common.back_to_stages")}</button
+      >
     </div>
   </main>
 {:else}
@@ -243,30 +254,41 @@ _start:
         <div class="title-group">
           <div class="level-info">
             <div class="stage-badge">{grandStage.badge}</div>
-            <h1>{currentLevel ? currentLevel.name : grandStage.title}</h1>
-            <p class="description">{message}</p>
+            <h1>
+              {currentLevel
+                ? $t(`levels.${currentLevel.id}.name`)
+                : $t(`grand_stages.${grandStage.id}.title`)}
+            </h1>
+            <p class="description">{simulationMessage || $t(messageKey)}</p>
           </div>
         </div>
 
         <div class="action-group">
           <div class="controls">
-            <button class="btn-secondary" on:click={goBack}>← STAGES</button>
+            <LanguageSelector />
+            <button class="btn-secondary" on:click={goBack}
+              >{$t("common.back_to_stages_short")}</button
+            >
             <select bind:value={syntax} class="syntax-select">
-              <option value="Intel">INTEL SYNTAX</option>
-              <option value="Att">AT&T SYNTAX</option>
+              <option value="Intel">{$t("common.intel_syntax")}</option>
+              <option value="Att">{$t("common.att_syntax")}</option>
             </select>
-            <button class="btn-reset" on:click={resetCode}> RESET </button>
+            <button class="btn-reset" on:click={resetCode}>
+              {$t("common.reset")}
+            </button>
             <button class="btn-run" on:click={runSimulation}>
-              <span class="btn-icon">▶</span> RUN & VERIFY
+              <span class="btn-icon">▶</span>
+              {$t("common.run_verify")}
             </button>
           </div>
           <div
             class="status-indicator"
-            class:success={status === "SUCCESS"}
-            class:error={status === "FAILED" || status.includes("ERROR")}
+            class:success={statusKey === "status.success"}
+            class:error={statusKey === "status.failed" ||
+              statusKey.includes("error")}
           >
             <span class="status-dot"></span>
-            <span class="status-text">{status}</span>
+            <span class="status-text">{$t(statusKey)}</span>
           </div>
         </div>
       </div>
@@ -274,7 +296,7 @@ _start:
       <div class="workspace">
         {#if error}
           <div class="error-banner glass-error">
-            <span class="error-label">EXCEPTION:</span>
+            <span class="error-label">{$t("common.exception")}</span>
             {error}
           </div>
         {/if}
@@ -282,7 +304,8 @@ _start:
         <div class="panels">
           <div class="left-panel glass">
             <div class="panel-header">
-              <span class="icon">📝</span> EDITOR
+              <span class="icon">📝</span>
+              {$t("common.editor")}
             </div>
             <Editor bind:code />
             {#if currentLevel}
@@ -296,13 +319,15 @@ _start:
           <div class="right-panel">
             <div class="glass panel-inner">
               <div class="panel-header">
-                <span class="icon">📊</span> REGISTERS
+                <span class="icon">📊</span>
+                {$t("common.registers")}
               </div>
               <RegisterView {registers} />
             </div>
             <div class="glass panel-inner">
               <div class="panel-header">
-                <span class="icon">🔌</span> I/O STREAM
+                <span class="icon">🔌</span>
+                {$t("common.io_stream")}
               </div>
               <IOView {input} {output} {expected} />
             </div>
@@ -594,4 +619,3 @@ _start:
     overflow: hidden;
   }
 </style>
-

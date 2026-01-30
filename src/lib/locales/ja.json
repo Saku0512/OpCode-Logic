@@ -1,0 +1,163 @@
+{
+    "common": {
+        "cleared": "CLEARED",
+        "locked": "LOCKED",
+        "unlocked": "UNLOCKED",
+        "levels": "{count} levels",
+        "done": "✓ 完了",
+        "initializing": "Initializing...",
+        "back_to_stages": "ステージ選択へ戻る",
+        "back_to_stages_short": "← STAGES",
+        "reset": "RESET",
+        "run_verify": "RUN & VERIFY",
+        "intel_syntax": "INTEL SYNTAX",
+        "att_syntax": "AT&T SYNTAX",
+        "editor": "EDITOR",
+        "registers": "REGISTERS",
+        "io_stream": "I/O STREAM",
+        "exception": "EXCEPTION:",
+        "unknown_stage": "UNKNOWN STAGE",
+        "unknown_stage_title": "Unknown Grand Stage",
+        "unknown_stage_desc": "指定されたグランドステージが見つかりませんでした。",
+        "stage_not_implemented": "このグランドステージのレベル定義はまだアプリに実装されていません。",
+        "missing_id": "未実装ID: ",
+        "lang_ja": "日本語",
+        "lang_en": "English"
+    },
+    "top": {
+        "brand_sub": "Grand Stage Select",
+        "hint": "グランドステージは順番に解放されます。次のグランドへ進むには、前のグランドを全てクリアしてください。",
+        "free_editor": "Free x86-64 Editor"
+    },
+    "explanation": {
+        "close": "解説を閉じる",
+        "read": "解説を読む",
+        "close_solution": "模範解答を閉じる",
+        "view_solution": "模範解答を見る",
+        "loading": "解説を読み込んでいます...",
+        "error": "解説の読み込みに失敗しました: {error}",
+        "loading_solution": "模範解答を読み込んでいます...",
+        "error_solution": "模範解答の読み込みに失敗しました: {error}",
+        "solution_title": "模範解答（collect.asm）"
+    },
+    "status": {
+        "ready": "READY",
+        "executing": "EXECUTING...",
+        "validating": "Validating logic against test vectors...",
+        "success": "SUCCESS",
+        "failed": "FAILED",
+        "mission_accomplished": "Mission accomplished. Level cleared.",
+        "runtime_error": "RUNTIME ERROR",
+        "system_error": "SYSTEM ERROR",
+        "select_level": "左のリストからレベルを選択してから実行してください。",
+        "select_to_begin": "Select a level to begin the mission."
+    },
+    "grand_stages": {
+        "1": {
+            "title": "The Accumulator",
+            "description": "レジスタ/ALU、フラグ、ジャンプ、ループの基礎を総ざらいする。"
+        },
+        "2": {
+            "title": "The Stack",
+            "description": "push/popを軸に、退避・並べ替え・スタック計算の考え方を身につける。"
+        }
+    },
+    "levels": {
+        "01_Mov&Call": {
+            "name": "Mov & Call",
+            "description": "標準入力から読み取ったバイト (syscall 0) を標準出力 (syscall 1) に書き出す。"
+        },
+        "02_Addition": {
+            "name": "Addition",
+            "description": "読み取ったバイトに 1 を加え、結果を書き出す。"
+        },
+        "03_Subtraction": {
+            "name": "Subtraction",
+            "description": "読み取ったバイトから 1 を引き、結果を書き出す。"
+        },
+        "04_TheXORTrick": {
+            "name": "The XOR Trick",
+            "description": "読み取ったバイトを 0x20 と XOR し、結果を書き出す。"
+        },
+        "05_Inc&Dec": {
+            "name": "Inc & Dec",
+            "description": "読み取ったバイトについて、偶数番目はインクリメント、奇数番目はデクリメントして書き出す。"
+        },
+        "06_Unconditional": {
+            "name": "Unconditional",
+            "description": "ステージ01と同じだが、JMPを使用して制御フローを構成する。"
+        },
+        "07_ZeroFlag": {
+            "name": "Zero Flag",
+            "description": "読み取ったバイトのうち、0x00 を 0x20 (スペース) に置き換えて書き出す。"
+        },
+        "08_SignFlag": {
+            "name": "Sign Flag",
+            "description": "読み取ったバイトが非負なら '+'、負なら '-' を出力する。"
+        },
+        "09_Comparison": {
+            "name": "Comparison",
+            "description": "連続するバイトを比較し、'+'、'='、'-' のマーカーを出力する (長さ N-1)。"
+        },
+        "10_Countdown": {
+            "name": "Countdown",
+            "description": "ASCII数字を1つ読み取り、その数字から '0' までのカウントダウンを出力する。"
+        },
+        "11_Accumulate3": {
+            "name": "Accumulate 3",
+            "description": "読み取った最初の 3 バイトを合計し、その結果を出力する。"
+        },
+        "12_TheAccumulator": {
+            "name": "The Accumulator (BOSS)",
+            "description": "変換ルール：A-Z -> a-z、0-9 -> インクリメント (9は0へ)、その他はそのまま。"
+        },
+        "13_Push&Pop": {
+            "name": "Push & Pop",
+            "description": "Aを読み取り、push/popしてからAを出力する。"
+        },
+        "14_SwapTwo": {
+            "name": "Swap Two",
+            "description": "A, Bを読み取り、B, Aを出力する。"
+        },
+        "15_Duplicate": {
+            "name": "Duplicate",
+            "description": "Aを読み取り、A, Aを出力する。"
+        },
+        "16_Reverse3": {
+            "name": "Reverse 3",
+            "description": "A, B, Cを読み取り、C, B, Aを出力する。"
+        },
+        "17_ReverseUntil0": {
+            "name": "Reverse Until 0",
+            "description": "0が現れるまで読み取り、それらを逆順に出力する（0は含まない）。"
+        },
+        "18_SumFromStack": {
+            "name": "Sum From Stack",
+            "description": "0が現れるまで読み取り、それらを合計して結果を出力する。"
+        },
+        "19_SafePop": {
+            "name": "Safe Pop",
+            "description": "アンダーフローさせずにスタック操作を処理し、最終的なスタックの深さを出力する。"
+        },
+        "20_RPN_AddOnly": {
+            "name": "RPN (Add Only)",
+            "description": "逆ポーランド記法評価：数値ならpush、-1なら加算、0なら終了。最後にトップを出力。"
+        },
+        "21_Sort3": {
+            "name": "Sort 3",
+            "description": "3つの値を読み取り、昇順にソートして出力する。"
+        },
+        "22_Rotate3": {
+            "name": "Rotate 3",
+            "description": "A, B, Cを読み取り、B, C, Aを出力する。"
+        },
+        "23_MinMaxFromStack": {
+            "name": "Min & Max From Stack",
+            "description": "0が現れるまで読み取り、最小値、最大値の順に出力する。"
+        },
+        "24_TheStackMachine": {
+            "name": "The Stack Machine (BOSS)",
+            "description": "トークンマシン：正数はpush、-1は加算、-2は減算、-3はXOR、0は終了。トップを出力。"
+        }
+    }
+}

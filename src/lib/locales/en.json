@@ -1,0 +1,163 @@
+{
+    "common": {
+        "cleared": "CLEARED",
+        "locked": "LOCKED",
+        "unlocked": "UNLOCKED",
+        "levels": "{count} levels",
+        "done": "✓ DONE",
+        "initializing": "Initializing...",
+        "back_to_stages": "Back to Stage Select",
+        "back_to_stages_short": "← STAGES",
+        "reset": "RESET",
+        "run_verify": "RUN & VERIFY",
+        "intel_syntax": "INTEL SYNTAX",
+        "att_syntax": "AT&T SYNTAX",
+        "editor": "EDITOR",
+        "registers": "REGISTERS",
+        "io_stream": "I/O STREAM",
+        "exception": "EXCEPTION:",
+        "unknown_stage": "UNKNOWN STAGE",
+        "unknown_stage_title": "Unknown Grand Stage",
+        "unknown_stage_desc": "The specified grand stage could not be found.",
+        "stage_not_implemented": "The level definitions for this grand stage have not yet been implemented in the app.",
+        "missing_id": "Unimplemented ID: ",
+        "lang_ja": "日本語",
+        "lang_en": "English"
+    },
+    "top": {
+        "brand_sub": "Grand Stage Select",
+        "hint": "Grand stages are unlocked sequentially. To proceed to the next grand stage, please clear all levels in the previous one.",
+        "free_editor": "Free x86-64 Editor"
+    },
+    "explanation": {
+        "close": "Close Explanation",
+        "read": "Read Explanation",
+        "close_solution": "Close Solution",
+        "view_solution": "View Solution",
+        "loading": "Loading explanation...",
+        "error": "Failed to load explanation: {error}",
+        "loading_solution": "Loading solution...",
+        "error_solution": "Failed to load model answer: {error}",
+        "solution_title": "Model Answer (collect.asm)"
+    },
+    "status": {
+        "ready": "READY",
+        "executing": "EXECUTING...",
+        "validating": "Validating logic against test vectors...",
+        "success": "SUCCESS",
+        "failed": "FAILED",
+        "mission_accomplished": "Mission accomplished. Level cleared.",
+        "runtime_error": "RUNTIME ERROR",
+        "system_error": "SYSTEM ERROR",
+        "select_level": "Please select a level from the list on the left before running.",
+        "select_to_begin": "Select a level to begin the mission."
+    },
+    "grand_stages": {
+        "1": {
+            "title": "The Accumulator",
+            "description": "A comprehensive review of the basics of registers/ALU, flags, jumps, and loops."
+        },
+        "2": {
+            "title": "The Stack",
+            "description": "Master the concepts of saving, reordering, and stack calculations centered around push/pop."
+        }
+    },
+    "levels": {
+        "01_Mov&Call": {
+            "name": "Mov & Call",
+            "description": "Read bytes from stdin (syscall 0), write them to stdout (syscall 1)."
+        },
+        "02_Addition": {
+            "name": "Addition",
+            "description": "Read bytes, add 1 to each byte, write result."
+        },
+        "03_Subtraction": {
+            "name": "Subtraction",
+            "description": "Read bytes, subtract 1 from each byte, write result."
+        },
+        "04_TheXORTrick": {
+            "name": "The XOR Trick",
+            "description": "Read bytes, XOR each byte with 0x20, write result."
+        },
+        "05_Inc&Dec": {
+            "name": "Inc & Dec",
+            "description": "Read bytes. Inc even-indexed bytes, dec odd-indexed bytes, write result."
+        },
+        "06_Unconditional": {
+            "name": "Unconditional",
+            "description": "Same as stage 01, but use JMP to structure the control flow."
+        },
+        "07_ZeroFlag": {
+            "name": "Zero Flag",
+            "description": "Read bytes, replace 0x00 with 0x20 (space), write result."
+        },
+        "08_SignFlag": {
+            "name": "Sign Flag",
+            "description": "Read bytes, output '+' if first byte is non-negative, otherwise '-'."
+        },
+        "09_Comparison": {
+            "name": "Comparison",
+            "description": "Read bytes, compare consecutive bytes, output '+', '=', '-' markers (length N-1)."
+        },
+        "10_Countdown": {
+            "name": "Countdown",
+            "description": "Read one ASCII digit, output a countdown from it to '0'."
+        },
+        "11_Accumulate3": {
+            "name": "Accumulate 3",
+            "description": "Read bytes, sum the first 3 bytes (u8), output 1 byte result."
+        },
+        "12_TheAccumulator": {
+            "name": "The Accumulator (BOSS)",
+            "description": "Read bytes and transform: A-Z -> a-z, 0-9 -> increment (wrap 9->0), others unchanged."
+        },
+        "13_Push&Pop": {
+            "name": "Push & Pop",
+            "description": "Read A, push/pop it, then output A (1 byte)."
+        },
+        "14_SwapTwo": {
+            "name": "Swap Two",
+            "description": "Read A,B and output B,A (2 bytes)."
+        },
+        "15_Duplicate": {
+            "name": "Duplicate",
+            "description": "Read A and output A,A (2 bytes)."
+        },
+        "16_Reverse3": {
+            "name": "Reverse 3",
+            "description": "Read A,B,C and output C,B,A (3 bytes)."
+        },
+        "17_ReverseUntil0": {
+            "name": "Reverse Until 0",
+            "description": "Read values until 0, output them reversed (0 not included)."
+        },
+        "18_SumFromStack": {
+            "name": "Sum From Stack",
+            "description": "Read values until 0, sum them, output 1 byte result."
+        },
+        "19_SafePop": {
+            "name": "Safe Pop",
+            "description": "Process tokens (push/pop) without underflow; output final depth."
+        },
+        "20_RPN_AddOnly": {
+            "name": "RPN (Add Only)",
+            "description": "RPN evaluation: numbers push, -1 add, 0 end; output top."
+        },
+        "21_Sort3": {
+            "name": "Sort 3",
+            "description": "Read 3 values and output them sorted ascending (3 bytes)."
+        },
+        "22_Rotate3": {
+            "name": "Rotate 3",
+            "description": "Read A,B,C and output B,C,A (3 bytes)."
+        },
+        "23_MinMaxFromStack": {
+            "name": "Min & Max From Stack",
+            "description": "Read values until 0; output min then max (2 bytes)."
+        },
+        "24_TheStackMachine": {
+            "name": "The Stack Machine (BOSS)",
+            "description": "Token machine: +push, -1 add, -2 sub, -3 xor, 0 end; output top."
+        }
+    }
+}
