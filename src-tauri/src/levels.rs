@@ -228,6 +228,14 @@ pub fn get_levels() -> Vec<Level> {
                 (vec![1, 2, -1, 3, -3, 0], vec![0]),
             ],
         },
+        Level {
+            id: "Tutorial_Exit".to_string(),
+            name: "Tutorial: Exit".to_string(),
+            description: "Set RAX to 60 and RDI to 0, then execute syscall.".to_string(),
+            test_cases: vec![
+                (vec![], vec![]), // Success if it exits without error
+            ],
+        },
     ]
 }
 

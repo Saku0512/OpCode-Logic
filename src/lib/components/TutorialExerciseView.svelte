@@ -36,6 +36,14 @@
         }
     });
 
+    function parseMarkdown(text: string) {
+        if (!text) return "";
+        return text
+            .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+            .replace(/`(.*?)`/g, "<code>$1</code>")
+            .replace(/\n/g, "<br>");
+    }
+
     async function runSimulation() {
         statusKey = "status.executing";
         error = null;
@@ -51,10 +59,16 @@
 
             const vmState = result.vm_state;
             registers = vmState.registers;
-            output =
-                vmState.output.length > 0
-                    ? vmState.output
-                    : [vmState.registers["RAX"] || 0];
+
+            // Fix: Only fallback to RAX if we expect exactly one value and no stream output was produced.
+            // If expected is empty, output should be empty.
+            if (vmState.output.length > 0) {
+                output = vmState.output;
+            } else if (expected.length === 1) {
+                output = [vmState.registers["RAX"] || 0];
+            } else {
+                output = [];
+            }
 
             if (!result.success) {
                 statusKey = "status.failed";
@@ -90,15 +104,19 @@
             <div class="badge">{$t("tutorial.common.mission")}</div>
             <h1>{$t(`tutorial.sections.${sectionId}.exercise.title`)}</h1>
             <p class="desc">
-                {$t(`tutorial.sections.${sectionId}.exercise.description`)}
+                {@html parseMarkdown(
+                    $t(`tutorial.sections.${sectionId}.exercise.description`),
+                )}
             </p>
 
             <div class="instruction-box">
                 <div class="box-label">{$t("tutorial.common.instruction")}</div>
                 <div class="instruction-text">
-                    {@html $t(
-                        `tutorial.sections.${sectionId}.exercise.instruction`,
-                    ).replace(/\n/g, "<br>")}
+                    {@html parseMarkdown(
+                        $t(
+                            `tutorial.sections.${sectionId}.exercise.instruction`,
+                        ),
+                    )}
                 </div>
             </div>
         </div>

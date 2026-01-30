@@ -164,30 +164,52 @@
         "courses": {
             "basics": {
                 "title": "Architecture Basics",
-                "description": "Learn the basics of CPU, registers, and the MOV instruction."
+                "description": "Learn the basics of CPU, registers, the MOV instruction, and system calls."
             }
         },
         "sections": {
             "intro": {
-                "title": "What is Assembly Language?",
+                "title": "Assembly and Registers",
                 "slides": {
                     "s1": {
                         "title": "Welcome to the World of Assembly",
-                        "content": "Assembly language is the language closest to the \"machine code\" that computers can directly understand.\nYou can learn how programs actually work on the CPU."
+                        "content": "Assembly language is the language closest to the **machine code** that computers can directly understand.\nFor example, the instruction `mov rax, 42` tells the CPU: \"Put the value 42 into the location called rax\"."
                     },
                     "s2": {
-                        "title": "CPU and Memory",
-                        "content": "The **CPU**, the brain of the computer, takes data from **memory** and performs calculations.\nInside the CPU, there are small boxes called **registers** for storing data temporarily."
+                        "title": "The CPU's \"Boxes\": Registers",
+                        "content": "Inside the CPU, there are high-speed storage locations called **registers**.\nIn the x86-64 architecture, we use 64-bit registers with names like `rax`, `rbx`, `rcx`, and `rdx`."
                     },
                     "s3": {
-                        "title": "First Instruction: MOV",
-                        "content": "The **MOV** instruction is for \"moving (copying)\" data from one place to another.\nWriting `mov rax, 123` puts the value `123` into the register `rax`."
+                        "title": "Moving Data: The MOV Instruction",
+                        "content": "The **MOV** instruction is used to copy data.\n\n`mov rax, 100`  ; Copy 100 into rax\n`mov rbx, rax`  ; Copy content of rax into rbx\n\nIn assembly, anything after a `;` is treated as a comment."
+                    },
+                    "s4": {
+                        "title": "Requesting the OS: SYSCALL",
+                        "content": "To ask the OS for things like printing to the screen or exiting, we use the **syscall** instruction.\nYou put the \"request type (syscall number)\" into `rax`, and \"details\" into registers like `rdi`.\n\nExample: Exiting the program\n`mov rax, 60`  ; 60 is exit\n`mov rdi, 0`   ; Exit code 0\n`syscall`      ; Execute!"
                     }
                 },
                 "exercise": {
-                    "title": "Put a Value into RAX",
-                    "description": "Let's try putting `123` into the register `rax`.",
-                    "instruction": "1. Enter `mov rax, 123` into the editor.\n2. Click the \"Run\" button to see if it's correct."
+                    "title": "Set a Value and Exit",
+                    "description": "Set the syscall number `60` in `rax`, set `0` in `rdi`, and execute `syscall`.",
+                    "instruction": "Enter the following code into the editor:\n`mov rax, 60`\n`mov rdi, 0`\n`syscall`"
+                }
+            },
+            "registers": {
+                "title": "Calculations and Arithmetic",
+                "slides": {
+                    "s1": {
+                        "title": "Let's Add: The ADD Instruction",
+                        "content": "The **ADD** instruction is used to add two values together.\n\n`add rax, 5`  ; Add 5 to rax\n\nThe result is stored in the left-hand register (rax in this case)."
+                    },
+                    "s2": {
+                        "title": "Let's Subtract: The SUB Instruction",
+                        "content": "The **SUB** instruction is used to subtract a value.\n\n`sub rbx, 10`  ; Subtract 10 from rbx\n\nJust like ADD, the result is saved back into the left-hand register."
+                    }
+                },
+                "exercise": {
+                    "title": "Try Some Math",
+                    "description": "Let's perform some simple calculations using registers.",
+                    "instruction": "1. Set an initial value with `mov rax, 10`.\n2. Add to it with `add rax, 5`.\n3. Verify your answer."
                 }
             }
         },

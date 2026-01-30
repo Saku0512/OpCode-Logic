@@ -30,12 +30,13 @@ export const courses: Course[] = [
                 slides: [
                     { id: "s1" },
                     { id: "s2" },
-                    { id: "s3" }
+                    { id: "s3" },
+                    { id: "s4" }
                 ],
                 exercise: {
                     id: "ex1",
-                    levelId: "01_Mov&Call", // Reuse existing level for now or create new ones
-                    initialCode: "section .text\n    global _start\n\n_start:\n    ; MISSION: Put 123 into RAX and exit\n    mov rax, 123\n    mov rax, 60\n    xor rdi, rdi\n    syscall"
+                    levelId: "Tutorial_Exit",
+                    initialCode: "section .text\n    global _start\n\n_start:\n    ; MISSION: Set RAX to 60 and RDI to 0, then execute syscall\n    "
                 }
             },
             {

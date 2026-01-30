@@ -137,14 +137,14 @@ fn run_simulation(
                 println!("Final Output: {:?}", state.output);
                 println!("Expected: {:?}", expected);
 
-                let output_correct = if !state.output.is_empty() {
+                let output_correct = if expected.is_empty() {
+                    state.output.is_empty()
+                } else if !state.output.is_empty() {
                     // Prioritize Stream check if output was produced
                     state.output.len() >= expected.len()
                         && &state.output[0..expected.len()] == expected.as_slice()
                 } else if expected.len() == 1 {
                     // Fallback to RAX if no stream output was produced but we expect 1 value
-                    // BUT: if we exited via sys_exit (60), RAX is 60 (or status),
-                    // so we should be careful if we are not expecting 60.
                     if state.exited && rax == 60 && expected[0] != 60 {
                         false
                     } else {

@@ -23,6 +23,14 @@
             currentIndex--;
         }
     }
+
+    function parseMarkdown(text: string) {
+        if (!text) return "";
+        return text
+            .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+            .replace(/`(.*?)`/g, "<code>$1</code>")
+            .replace(/\n/g, "<br>");
+    }
 </script>
 
 <div class="slide-viewer glass">
@@ -45,9 +53,11 @@
                 </div>
             {/if}
             <div class="text-content">
-                {@html $t(
-                    `tutorial.sections.${sectionId}.slides.${currentSlide.id}.content`,
-                ).replace(/\n/g, "<br>")}
+                {@html parseMarkdown(
+                    $t(
+                        `tutorial.sections.${sectionId}.slides.${currentSlide.id}.content`,
+                    ),
+                )}
             </div>
         </div>
     </div>
@@ -111,9 +121,23 @@
     }
 
     .text-content {
-        font-size: 1.25rem;
+        font-size: 1.15rem;
         line-height: 1.8;
         color: #cbd5e1;
+    }
+
+    :global(.text-content strong) {
+        color: #f59e0b;
+        font-weight: 700;
+    }
+
+    :global(.text-content code) {
+        background: rgba(0, 0, 0, 0.4);
+        color: #38bdf8;
+        padding: 0.2rem 0.5rem;
+        border-radius: 4px;
+        font-family: "Fira Code", monospace;
+        font-size: 0.95em;
     }
 
     .image-container {
