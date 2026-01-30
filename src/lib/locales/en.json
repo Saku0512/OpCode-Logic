@@ -159,5 +159,46 @@
             "name": "The Stack Machine (BOSS)",
             "description": "Token machine: +push, -1 add, -2 sub, -3 xor, 0 end; output top."
         }
+    },
+    "tutorial": {
+        "courses": {
+            "basics": {
+                "title": "Architecture Basics",
+                "description": "Learn the basics of CPU, registers, and the MOV instruction."
+            }
+        },
+        "sections": {
+            "intro": {
+                "title": "What is Assembly Language?",
+                "slides": {
+                    "s1": {
+                        "title": "Welcome to the World of Assembly",
+                        "content": "Assembly language is the language closest to the \"machine code\" that computers can directly understand.\nYou can learn how programs actually work on the CPU."
+                    },
+                    "s2": {
+                        "title": "CPU and Memory",
+                        "content": "The **CPU**, the brain of the computer, takes data from **memory** and performs calculations.\nInside the CPU, there are small boxes called **registers** for storing data temporarily."
+                    },
+                    "s3": {
+                        "title": "First Instruction: MOV",
+                        "content": "The **MOV** instruction is for \"moving (copying)\" data from one place to another.\nWriting `mov rax, 123` puts the value `123` into the register `rax`."
+                    }
+                },
+                "exercise": {
+                    "title": "Put a Value into RAX",
+                    "description": "Let's try putting `123` into the register `rax`.",
+                    "instruction": "1. Enter `mov rax, 123` into the editor.\n2. Click the \"Run\" button to see if it's correct."
+                }
+            }
+        },
+        "common": {
+            "next": "Next",
+            "back": "Back",
+            "start_exercise": "Start Exercise",
+            "back_to_slides": "Back to Slides",
+            "mission": "MISSION",
+            "instruction": "INSTRUCTION",
+            "course_list": "Course List"
+        }
     }
 }

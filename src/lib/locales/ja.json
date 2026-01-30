@@ -159,5 +159,46 @@
             "name": "The Stack Machine (BOSS)",
             "description": "トークンマシン：正数はpush、-1は加算、-2は減算、-3はXOR、0は終了。トップを出力。"
         }
+    },
+    "tutorial": {
+        "courses": {
+            "basics": {
+                "title": "Architecture Basics",
+                "description": "CPUとレジスタの仕組み、MOV命令を学びます。"
+            }
+        },
+        "sections": {
+            "intro": {
+                "title": "アセンブリ言語とは？",
+                "slides": {
+                    "s1": {
+                        "title": "アセンブリ言語の世界へようこそ",
+                        "content": "アセンブリ言語は、コンピュータが直接理解できる「機械語」に最も近い言語です。\nプログラムが実際にCPUでどのように動いているかを学ぶことができます。"
+                    },
+                    "s2": {
+                        "title": "CPUとメモリ",
+                        "content": "コンピュータの頭脳である**CPU**は、**メモリ**からデータを取り出し、計算を行います。\nCPUの中には、データを一時的に保存するための**レジスタ**という小さな箱があります。"
+                    },
+                    "s3": {
+                        "title": "最初の命令：MOV",
+                        "content": "**MOV**命令は、データをある場所から別の場所に「移動（コピー）」する命令です。\n`mov rax, 123` と書くと、レジスタ `rax` に `123` という値を入れます。"
+                    }
+                },
+                "exercise": {
+                    "title": "RAXに値を入れよう",
+                    "description": "レジスタ `rax` に `123` を入れてみましょう。",
+                    "instruction": "1. エディタに `mov rax, 123` と入力してください。\n2. 「実行」ボタンを押して正解か確認してください。"
+                }
+            }
+        },
+        "common": {
+            "next": "次へ",
+            "back": "戻る",
+            "start_exercise": "演習を始める",
+            "back_to_slides": "スライドに戻る",
+            "mission": "MISSION",
+            "instruction": "INSTRUCTION",
+            "course_list": "コース一覧"
+        }
     }
 }
