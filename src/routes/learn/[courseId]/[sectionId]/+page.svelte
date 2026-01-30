@@ -56,6 +56,7 @@
             />
         {:else if mode === "exercise" && section.exercise}
             <TutorialExerciseView
+                {courseId}
                 {sectionId}
                 exercise={section.exercise}
                 onBack={backToSlides}

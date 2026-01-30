@@ -2,15 +2,18 @@
     import { invoke } from "@tauri-apps/api/core";
     import { onMount } from "svelte";
     import { t } from "svelte-i18n";
+    import { goto } from "$app/navigation";
+    import { tutorialProgress } from "$lib/stores/tutorialProgress";
     import Editor from "$lib/components/Editor.svelte";
     import RegisterView from "$lib/components/RegisterView.svelte";
     import IOView from "$lib/components/IOView.svelte";
     import type { Section, Exercise } from "$lib/curriculum";
 
+    export let courseId: string;
     export let sectionId: string;
     export let exercise: Exercise;
     export let onBack: () => void;
-    export let onComplete: () => void;
+    export let onComplete: () => void; // Used for "Next Section" navigation
 
     let code = exercise.initialCode || "";
     let syntax: "Intel" | "Att" = "Intel";
@@ -22,6 +25,7 @@
     let error: string | null = null;
     let simulationMessage: string | null = null;
     let levelData: any = null;
+    let showSuccessModal = false;
 
     onMount(async () => {
         try {
@@ -75,7 +79,9 @@
                 simulationMessage = result.message;
             } else {
                 statusKey = "status.success";
-                onComplete();
+                // Don't call onComplete() immediately. Show modal first.
+                tutorialProgress.markCleared(courseId, sectionId); // Use sectionId to match course list tracking
+                showSuccessModal = true;
             }
 
             if (vmState.error) {
@@ -88,6 +94,19 @@
         }
     }
 
+    function handleNext() {
+        showSuccessModal = false;
+        onComplete();
+    }
+
+    function handleStay() {
+        showSuccessModal = false;
+    }
+
+    function goHome() {
+        goto("/learn");
+    }
+
     function resetCode() {
         code = exercise.initialCode || "";
     }
@@ -98,6 +117,9 @@
         <div class="panel-header">
             <button class="btn-back" on:click={onBack}
                 >← {$t("tutorial.common.back_to_slides")}</button
+            >
+            <button class="btn-home" on:click={goHome}
+                >🏠 {$t("tutorial.common.home")}</button
             >
         </div>
         <div class="content">
@@ -179,6 +201,25 @@
         </div>
     </div>
 </div>
+
+{#if showSuccessModal}
+    <div class="modal-overlay">
+        <div class="modal glass">
+            <div class="modal-content">
+                <div class="level-clear-icon">🎉</div>
+                <h2>{$t("tutorial.common.level_cleared")}</h2>
+                <div class="modal-actions">
+                    <button class="btn-secondary" on:click={handleStay}
+                        >{$t("tutorial.common.stay_here")}</button
+                    >
+                    <button class="btn-primary" on:click={handleNext}
+                        >{$t("tutorial.common.next_section")} →</button
+                    >
+                </div>
+            </div>
+        </div>
+    </div>
+{/if}
 
 {#if error}
     <div class="error-toast glass">
@@ -391,13 +432,107 @@
         animation: slideIn 0.3s ease-out;
     }
 
-    @keyframes slideIn {
+    .btn-home {
+        background: none;
+        border: none;
+        color: #64748b;
+        font-weight: 600;
+        cursor: pointer;
+        font-size: 0.9rem;
+        padding: 0;
+        margin-left: 1rem;
+    }
+
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 2000;
+        animation: fadeIn 0.2s ease-out;
+    }
+
+    .modal {
+        background: #1e293b;
+        border: 1px solid rgba(59, 130, 246, 0.3);
+        padding: 3rem;
+        border-radius: 24px;
+        text-align: center;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+        animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .level-clear-icon {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+    }
+
+    .modal h2 {
+        font-size: 2rem;
+        color: #fff;
+        margin: 0 0 2rem;
+        text-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+    }
+
+    .modal-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+        color: white;
+        border: none;
+        padding: 0.8rem 2rem;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: transform 0.1s;
+    }
+
+    .btn-primary:hover {
+        transform: scale(1.05);
+    }
+
+    .btn-secondary {
+        background: rgba(255, 255, 255, 0.1);
+        color: #94a3b8;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 0.8rem 1.5rem;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 1rem;
+        cursor: pointer;
+    }
+
+    .btn-secondary:hover {
+        background: rgba(255, 255, 255, 0.15);
+        color: #fff;
+    }
+
+    @keyframes fadeIn {
         from {
-            transform: translateX(100%);
             opacity: 0;
         }
         to {
-            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    @keyframes scaleIn {
+        from {
+            transform: scale(0.8);
+            opacity: 0;
+        }
+        to {
+            transform: scale(1);
             opacity: 1;
         }
     }

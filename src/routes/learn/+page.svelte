@@ -3,12 +3,10 @@
     import { courses } from "$lib/curriculum";
     import { goto } from "$app/navigation";
     import LanguageSelector from "$lib/components/LanguageSelector.svelte";
+    import { tutorialProgress } from "$lib/stores/tutorialProgress";
 
     function startCourse(courseId: string) {
-        const course = courses.find((c) => c.id === courseId);
-        if (course && course.sections.length > 0) {
-            goto(`/learn/${courseId}/${course.sections[0].id}`);
-        }
+        goto(`/learn/${courseId}`);
     }
 
     function goBack() {
@@ -45,6 +43,13 @@
                             <span class="meta"
                                 >{course.sections.length} Sections</span
                             >
+                            <span class="meta-progress">
+                                {tutorialProgress.getClearedCount(
+                                    $tutorialProgress,
+                                    course.id,
+                                    course.sections.map((s) => s.id),
+                                )} / {course.sections.length} Done
+                            </span>
                             <span class="btn-start">Start Course →</span>
                         </div>
                     </div>
@@ -149,6 +154,15 @@
         font-family: "Fira Code", monospace;
         font-size: 0.8rem;
         color: #64748b;
+    }
+
+    .meta-progress {
+        font-family: "Fira Code", monospace;
+        font-size: 0.8rem;
+        color: #10b981;
+        background: rgba(16, 185, 129, 0.1);
+        padding: 0.2rem 0.5rem;
+        border-radius: 4px;
     }
 
     .btn-start {

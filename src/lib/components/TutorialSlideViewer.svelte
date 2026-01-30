@@ -1,5 +1,6 @@
 <script lang="ts">
     import { t } from "svelte-i18n";
+    import { goto } from "$app/navigation";
     import type { Section, Slide } from "$lib/curriculum";
 
     export let sectionId: string;
@@ -24,6 +25,10 @@
         }
     }
 
+    function goHome() {
+        goto("/learn");
+    }
+
     function parseMarkdown(text: string) {
         if (!text) return "";
         return text
@@ -36,10 +41,13 @@
 <div class="slide-viewer glass">
     <div class="slide-content">
         <div class="slide-header">
-            <div class="slide-title">
-                {$t(
-                    `tutorial.sections.${sectionId}.slides.${currentSlide.id}.title`,
-                )}
+            <div class="header-left">
+                <button class="btn-home" on:click={goHome}>🏠</button>
+                <div class="slide-title">
+                    {$t(
+                        `tutorial.sections.${sectionId}.slides.${currentSlide.id}.title`,
+                    )}
+                </div>
             </div>
             <div class="progress">
                 {currentIndex + 1} / {slides.length}
@@ -100,6 +108,27 @@
         margin-bottom: 2rem;
         border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         padding-bottom: 1rem;
+    }
+
+    .header-left {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .btn-home {
+        background: none;
+        border: none;
+        color: #64748b;
+        font-size: 1.2rem;
+        cursor: pointer;
+        padding: 0;
+        transition: transform 0.1s;
+    }
+
+    .btn-home:hover {
+        transform: scale(1.1);
+        color: #94a3b8;
     }
 
     .slide-title {

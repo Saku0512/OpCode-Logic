@@ -194,6 +194,28 @@
                     "instruction": "Enter the following code into the editor:\n`mov rax, 60`\n`mov rdi, 0`\n`syscall`"
                 }
             },
+            "io": {
+                "title": "Basic Input & Output",
+                "slides": {
+                    "s1": {
+                        "title": "Talking to the World: I/O",
+                        "content": "Programs don't just calculate. They interact with the outside world by reading from **stdin** and writing to **stdout**."
+                    },
+                    "s2": {
+                        "title": "Reading Magic: Syscall 0",
+                        "content": "To read data, we use **syscall 0 (read)**.\n\n`mov rax, 0`   ; syscall number 0 (read)\n`mov rdi, 0`   ; file descriptor 0 (stdin)\n`mov rsi, buf` ; buffer address\n`mov rdx, 1`   ; bytes to read\n`syscall`"
+                    },
+                    "s3": {
+                        "title": "Writing Magic: Syscall 1",
+                        "content": "To write data, we use **syscall 1 (write)**.\n\n`mov rax, 1`   ; syscall number 1 (write)\n`mov rdi, 1`   ; file descriptor 1 (stdout)\n`mov rsi, buf` ; buffer address\n`mov rdx, 1`   ; bytes to write\n`syscall`"
+                    }
+                },
+                "exercise": {
+                    "title": "Echo Program",
+                    "description": "Let's read data and write it back exactly as is (Echo).",
+                    "instruction": "1. Read 1 byte using `syscall 0`.\n2. Write that byte using `syscall 1`.\n3. Exit using `syscall 60`."
+                }
+            },
             "registers": {
                 "title": "Calculations and Arithmetic",
                 "slides": {
@@ -208,8 +230,8 @@
                 },
                 "exercise": {
                     "title": "Try Some Math",
-                    "description": "Let's perform some simple calculations using registers.",
-                    "instruction": "1. Set an initial value with `mov rax, 10`.\n2. Add to it with `add rax, 5`.\n3. Verify your answer."
+                    "description": "Create a program that reads input, adds 1, and writes the result.",
+                    "instruction": "1. Read 1 byte using `syscall 0`.\n2. Add 1 to the value using the `add` instruction.\n3. Write the result using `syscall 1`.\n\nRepeat this process twice (for two inputs)."
                 }
             }
         },
@@ -220,7 +242,11 @@
             "back_to_slides": "Back to Slides",
             "mission": "MISSION",
             "instruction": "INSTRUCTION",
-            "course_list": "Course List"
+            "course_list": "Course List",
+            "home": "Home",
+            "level_cleared": "Level Cleared!",
+            "next_section": "Next Section",
+            "stay_here": "Stay Here"
         }
     }
 }

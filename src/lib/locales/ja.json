@@ -194,6 +194,28 @@
                     "instruction": "以下のコードをエディタに入力してください：\n`mov rax, 60`\n`mov rdi, 0`\n`syscall`"
                 }
             },
+            "io": {
+                "title": "入出力の基本",
+                "slides": {
+                    "s1": {
+                        "title": "プログラムの会話：入出力",
+                        "content": "プログラムは計算するだけではありません。外の世界とやり取りするために、**標準入力 (stdin)** からデータを読み込み、**標準出力 (stdout)** に書き込みます。"
+                    },
+                    "s2": {
+                        "title": "読み込みの魔法：Syscall 0",
+                        "content": "データを読み込むには **syscall 0 (read)** を使います。\n\n`mov rax, 0`   ; syscall番号 0 (read)\n`mov rdi, 0`   ; ファイル記述子 0 (stdin)\n`mov rsi, buf` ; データの保存先アドレス\n`mov rdx, 1`   ; 読み込むバイト数\n`syscall`"
+                    },
+                    "s3": {
+                        "title": "書き出しの魔法：Syscall 1",
+                        "content": "データを書き出すには **syscall 1 (write)** を使います。\n\n`mov rax, 1`   ; syscall番号 1 (write)\n`mov rdi, 1`   ; ファイル記述子 1 (stdout)\n`mov rsi, buf` ; データの場所\n`mov rdx, 1`   ; 書き出すバイト数\n`syscall`"
+                    }
+                },
+                "exercise": {
+                    "title": "オウム返しプログラム",
+                    "description": "読み込んだデータをそのまま書き出してみましょう（エコー）。",
+                    "instruction": "1. `syscall 0` で1バイト読み込みます。\n2. `syscall 1` でその1バイトを書き出します。\n3. `syscall 60` で終了します。"
+                }
+            },
             "registers": {
                 "title": "計算と算術演算",
                 "slides": {
@@ -208,8 +230,8 @@
                 },
                 "exercise": {
                     "title": "計算に挑戦しよう",
-                    "description": "レジスタを使って簡単な計算を行ってみましょう。",
-                    "instruction": "1. `mov rax, 10` で初期値をセットします。\n2. `add rax, 5` で値を足します。\n3. 正解か確認してください。"
+                    "description": "入力を読み込み、1を足して出力するプログラムを作成しましょう。",
+                    "instruction": "1. `syscall 0` で1バイト読み込みます。\n2. `add` 命令を使って読み込んだ値に 1 を足します。\n3. `syscall 1` で結果を書き出します。\n\nこれを2回繰り返してください（2つの入力があるため）。"
                 }
             }
         },
@@ -220,7 +242,11 @@
             "back_to_slides": "スライドに戻る",
             "mission": "MISSION",
             "instruction": "INSTRUCTION",
-            "course_list": "コース一覧"
+            "course_list": "コース一覧",
+            "home": "ホーム",
+            "level_cleared": "Level Cleared!",
+            "next_section": "次へ進む",
+            "stay_here": "この場に留まる"
         }
     }
 }
