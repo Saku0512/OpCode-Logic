@@ -141,6 +141,23 @@
                     )}
                 </div>
             </div>
+
+            <div class="bottom-panels-moved">
+                <div class="glass panel-inner">
+                    <div class="panel-header-small">
+                        <span class="icon">📊</span>
+                        {$t("common.registers")}
+                    </div>
+                    <RegisterView {registers} />
+                </div>
+                <div class="glass panel-inner">
+                    <div class="panel-header-small">
+                        <span class="icon">🔌</span>
+                        {$t("common.io_stream")}
+                    </div>
+                    <IOView {input} {output} {expected} />
+                </div>
+            </div>
         </div>
     </div>
 
@@ -180,23 +197,6 @@
                 {#if simulationMessage}
                     <span class="status-msg">: {simulationMessage}</span>
                 {/if}
-            </div>
-        </div>
-
-        <div class="bottom-panels">
-            <div class="glass panel-inner">
-                <div class="panel-header-small">
-                    <span class="icon">📊</span>
-                    {$t("common.registers")}
-                </div>
-                <RegisterView {registers} />
-            </div>
-            <div class="glass panel-inner">
-                <div class="panel-header-small">
-                    <span class="icon">🔌</span>
-                    {$t("common.io_stream")}
-                </div>
-                <IOView {input} {output} {expected} />
             </div>
         </div>
     </div>
@@ -239,11 +239,12 @@
     }
 
     .left-panel {
-        flex: 0.8;
+        flex: 1; /* Increased flex to give more space for registers/IO */
         display: flex;
         flex-direction: column;
         padding: 2rem;
         overflow-y: auto;
+        gap: 2rem; /* Spacing between elements */
     }
 
     .btn-back {
@@ -299,7 +300,7 @@
     }
 
     .right-panel {
-        flex: 1.2;
+        flex: 1;
         display: flex;
         flex-direction: column;
         gap: 1.25rem;
@@ -307,7 +308,7 @@
     }
 
     .editor-section {
-        flex: 1.2;
+        flex: 1; /* Allow editor to fill height */
         display: flex;
         flex-direction: column;
         overflow: hidden;
@@ -334,8 +335,10 @@
     }
 
     .editor-wrapper {
-        flex: 1;
+        flex: 1; /* Allow wrapper to fill remaining space */
         overflow: hidden;
+        display: flex; /* Added this */
+        flex-direction: column; /* Added this */
     }
 
     .status-bar {
@@ -362,11 +365,11 @@
         color: #64748b;
     }
 
-    .bottom-panels {
-        flex: 0.8;
+    .bottom-panels-moved {
         display: flex;
+        flex-direction: column; /* Stack vertically on the left panel */
         gap: 1.25rem;
-        min-height: 0;
+        margin-top: 2rem;
     }
 
     .panel-inner {
