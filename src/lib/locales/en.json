@@ -226,6 +226,10 @@
                     "s2": {
                         "title": "Let's Subtract: The SUB Instruction",
                         "content": "The **SUB** instruction is used to subtract a value.\n\n`sub rbx, 10`  ; Subtract 10 from rbx\n\nJust like ADD, the result is saved back into the left-hand register."
+                    },
+                    "s3": {
+                        "title": "Accessing Memory",
+                        "content": "To use the value of a variable, use `[]`.\n\n`mov bl, [buf1]`\nThis checks the \"data at the location buf1\" and copies it to the `bl` register.\n\n* `bl` is the lower 8 bits of the `rbx` register, used for 1-byte operations."
                     }
                 },
                 "exercise": {

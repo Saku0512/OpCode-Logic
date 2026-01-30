@@ -56,7 +56,8 @@ export const courses: Course[] = [
                 id: "registers",
                 slides: [
                     { id: "s1" },
-                    { id: "s2" }
+                    { id: "s2" },
+                    { id: "s3" }
                 ],
                 exercise: {
                     id: "ex1",
