@@ -1,5 +1,22 @@
 <script lang="ts">
     export let code: string = "";
+
+    function handleKeydown(e: KeyboardEvent) {
+        if (e.key === "Tab") {
+            e.preventDefault();
+            const textarea = e.target as HTMLTextAreaElement;
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+
+            // Insert 4 spaces
+            code = code.substring(0, start) + "    " + code.substring(end);
+
+            // Move cursor
+            setTimeout(() => {
+                textarea.selectionStart = textarea.selectionEnd = start + 4;
+            }, 0);
+        }
+    }
 </script>
 
 <div class="editor-container">
@@ -7,6 +24,7 @@
         bind:value={code}
         class="editor"
         placeholder="Enter assembly code here..."
+        on:keydown={handleKeydown}
     ></textarea>
 </div>
 
