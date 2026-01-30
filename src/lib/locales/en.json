@@ -159,5 +159,98 @@
             "name": "The Stack Machine (BOSS)",
             "description": "Token machine: +push, -1 add, -2 sub, -3 xor, 0 end; output top."
         }
+    },
+    "tutorial": {
+        "courses": {
+            "basics": {
+                "title": "Architecture Basics",
+                "description": "Learn the basics of CPU, registers, the MOV instruction, and system calls."
+            }
+        },
+        "sections": {
+            "intro": {
+                "title": "Assembly and Registers",
+                "slides": {
+                    "s1": {
+                        "title": "Welcome to the World of Assembly",
+                        "content": "Assembly language is the language closest to the **machine code** that computers can directly understand.\nFor example, the instruction `mov rax, 42` tells the CPU: \"Put the value 42 into the location called rax\"."
+                    },
+                    "s2": {
+                        "title": "The CPU's \"Boxes\": Registers",
+                        "content": "Inside the CPU, there are high-speed storage locations called **registers**.\nIn the x86-64 architecture, we use 64-bit registers with names like `rax`, `rbx`, `rcx`, and `rdx`."
+                    },
+                    "s3": {
+                        "title": "Moving Data: The MOV Instruction",
+                        "content": "The **MOV** instruction is used to copy data.\n\n`mov rax, 100`  ; Copy 100 into rax\n`mov rbx, rax`  ; Copy content of rax into rbx\n\nIn assembly, anything after a `;` is treated as a comment."
+                    },
+                    "s4": {
+                        "title": "Requesting the OS: SYSCALL",
+                        "content": "To ask the OS for things like printing to the screen or exiting, we use the **syscall** instruction.\nYou put the \"request type (syscall number)\" into `rax`, and \"details\" into registers like `rdi`.\n\nExample: Exiting the program\n`mov rax, 60`  ; 60 is exit\n`mov rdi, 0`   ; Exit code 0\n`syscall`      ; Execute!"
+                    }
+                },
+                "exercise": {
+                    "title": "Set a Value and Exit",
+                    "description": "Set the syscall number `60` in `rax`, set `0` in `rdi`, and execute `syscall`.",
+                    "instruction": "Enter the following code into the editor:\n`mov rax, 60`\n`mov rdi, 0`\n`syscall`"
+                }
+            },
+            "io": {
+                "title": "Basic Input & Output",
+                "slides": {
+                    "s1": {
+                        "title": "Talking to the World: I/O",
+                        "content": "Programs don't just calculate. They interact with the outside world by reading from **stdin** and writing to **stdout**."
+                    },
+                    "s2": {
+                        "title": "Reading Magic: Syscall 0",
+                        "content": "To read data, we use **syscall 0 (read)**.\n\n`mov rax, 0`   ; syscall number 0 (read)\n`mov rdi, 0`   ; file descriptor 0 (stdin)\n`mov rsi, buf` ; buffer address\n`mov rdx, 1`   ; bytes to read\n`syscall`"
+                    },
+                    "s3": {
+                        "title": "Writing Magic: Syscall 1",
+                        "content": "To write data, we use **syscall 1 (write)**.\n\n`mov rax, 1`   ; syscall number 1 (write)\n`mov rdi, 1`   ; file descriptor 1 (stdout)\n`mov rsi, buf` ; buffer address\n`mov rdx, 1`   ; bytes to write\n`syscall`"
+                    }
+                },
+                "exercise": {
+                    "title": "Echo Program",
+                    "description": "Let's read data and write it back exactly as is (Echo).",
+                    "instruction": "1. Read 1 byte using `syscall 0`.\n2. Write that byte using `syscall 1`.\n3. Exit using `syscall 60`."
+                }
+            },
+            "registers": {
+                "title": "Calculations and Arithmetic",
+                "slides": {
+                    "s1": {
+                        "title": "Let's Add: The ADD Instruction",
+                        "content": "The **ADD** instruction is used to add two values together.\n\n`add rax, 5`  ; Add 5 to rax\n\nThe result is stored in the left-hand register (rax in this case)."
+                    },
+                    "s2": {
+                        "title": "Let's Subtract: The SUB Instruction",
+                        "content": "The **SUB** instruction is used to subtract a value.\n\n`sub rbx, 10`  ; Subtract 10 from rbx\n\nJust like ADD, the result is saved back into the left-hand register."
+                    },
+                    "s3": {
+                        "title": "Accessing Memory",
+                        "content": "To use the value of a variable, use `[]`.\n\n`mov bl, [buf1]`\nThis checks the \"data at the location buf1\" and copies it to the `bl` register.\n\n* `bl` is the lower 8 bits of the `rbx` register, used for 1-byte operations."
+                    }
+                },
+                "exercise": {
+                    "title": "Try Some Math",
+                    "description": "Create a program that reads input, adds 1, and writes the result.",
+                    "instruction": "1. Read 1 byte using `syscall 0`.\n2. Add 1 to the value using the `add` instruction.\n3. Write the result using `syscall 1`.\n\nRepeat this process twice (for two inputs)."
+                }
+            }
+        },
+        "common": {
+            "next": "Next",
+            "back": "Back",
+            "start_exercise": "Start Exercise",
+            "back_to_slides": "Back to Slides",
+            "mission": "MISSION",
+            "instruction": "INSTRUCTION",
+            "course_list": "Course List",
+            "home": "Home",
+            "level_cleared": "Level Cleared!",
+            "next_section": "Next Section",
+            "stay_here": "Stay Here"
+        }
     }
 }

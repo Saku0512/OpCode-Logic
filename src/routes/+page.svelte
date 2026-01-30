@@ -100,11 +100,20 @@
         {$t("top.hint")}
       </div>
 
-      <div class="free-editor-link">
-        <button class="link-free-editor" on:click={openFreeEditor}>
-          <span class="icon">💻</span>
-          <span>{$t("top.free_editor")}</span>
-        </button>
+      <div class="top-actions">
+        <div class="free-editor-link">
+          <button class="link-free-editor" on:click={openFreeEditor}>
+            <span class="icon">💻</span>
+            <span>{$t("top.free_editor")}</span>
+          </button>
+        </div>
+
+        <div class="learn-link">
+          <button class="link-learn" on:click={() => goto("/learn")}>
+            <span class="icon">🎓</span>
+            <span>Learn Assembly (Tutorial)</span>
+          </button>
+        </div>
       </div>
     {/if}
   </div>
@@ -293,13 +302,24 @@
     }
   }
 
-  .free-editor-link {
+  .top-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
     margin-top: 1.5rem;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
     padding-top: 1.5rem;
   }
 
-  .link-free-editor {
+  .free-editor-link,
+  .learn-link {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+  }
+
+  .link-free-editor,
+  .link-learn {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -316,9 +336,27 @@
     transition: all 0.2s;
   }
 
+  .link-learn {
+    background: rgba(16, 185, 129, 0.1);
+    border-color: rgba(16, 185, 129, 0.3);
+    color: #34d399;
+  }
+
   .link-free-editor:hover {
     background: rgba(59, 130, 246, 0.2);
     border-color: rgba(59, 130, 246, 0.5);
     color: #93c5fd;
+  }
+
+  .link-learn:hover {
+    background: rgba(16, 185, 129, 0.2);
+    border-color: rgba(16, 185, 129, 0.5);
+    color: #6ee7b7;
+  }
+
+  @media (max-width: 600px) {
+    .top-actions {
+      grid-template-columns: 1fr;
+    }
   }
 </style>
